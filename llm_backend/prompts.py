@@ -137,3 +137,73 @@ def build_system_prompt(format_instructions: str) -> str:
         few_shot_examples=format_few_shot_examples(),
         format_instructions=format_instructions,
     )
+
+# -- S5-3: Multi-action guidance ----------------------------------------------
+# Appended to the system prompt so the LLM knows it is being handed ONE action
+# at a time, already separated by llm_backend/multi_action.py.  Without this the
+# model sometimes tries to summarise a whole compound sentence into one action.
+
+MULTI_ACTION_NOTE = """
+MULTI-ACTION HANDLING:
+Compound instructions are split upstream, so the text you receive is a SINGLE
+action. Parse exactly what you are given — do not merge, drop, or invent
+additional actions, and do not try to describe a sequence in one object.
+
+A pick and its matching place are ONE action, not two:
+    "pick up the red block and place it in the left tray"
+        -> action="pick", object_target="red block", destination="left tray"
+"""
+
+
+# -- S5-3: Few-shot examples for split sub-instructions ------------------------
+MULTI_ACTION_EXAMPLES = [
+    {
+        "instruction": "move the green block to the left tray",
+        "output": {
+            "action": "move",
+            "object_target": "green block",
+            "destination": "left tray",
+            "spatial_relation": "in",
+            "confidence": "high",
+            "raw_instruction": "move the green block to the left tray",
+            "notes": None
+        }
+    },
+    {
+        "instruction": "move the yellow block to the right tray",
+        "output": {
+            "action": "move",
+            "object_target": "yellow block",
+            "destination": "right tray",
+            "spatial_relation": "in",
+            "confidence": "high",
+            "raw_instruction": "move the yellow block to the right tray",
+            "notes": None
+        }
+    },
+]
+
+
+def build_multi_action_prompt(format_instructions: str) -> str:
+    """
+    Build a system prompt for parsing ONE sub-instruction of a multi-action
+    command. Same contract as build_system_prompt(), plus MULTI_ACTION_NOTE
+    and the multi-action few-shot examples.
+    """
+    import json
+
+    lines = ["Additional examples of split sub-instructions:\n"]
+    for i, ex in enumerate(MULTI_ACTION_EXAMPLES, 1):
+        lines.append(f"Multi-action example {i}:")
+        lines.append(f"  Instruction: \"{ex['instruction']}\"")
+        lines.append(f"  Output: {json.dumps(ex['output'], indent=4)}\n")
+
+    return (
+        SYSTEM_PROMPT_TEMPLATE.format(
+            few_shot_examples=format_few_shot_examples(),
+            format_instructions=format_instructions,
+        )
+        + MULTI_ACTION_NOTE
+        + "\n"
+        + "\n".join(lines)
+    )

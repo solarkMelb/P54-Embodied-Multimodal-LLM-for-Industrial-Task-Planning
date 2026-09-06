@@ -51,8 +51,9 @@ P54-Embodied-Multimodal-LLM-for-Industrial-Task-Planning/
 │
 ├── llm_backend/                         ← LLM instruction parser
 │   ├── __init__.py
-│   ├── custom_LLM_parser.py             ← parse_instruction() — main entry point
-│   ├── schema.py                        ← ParsedInstruction Pydantic model
+│   ├── custom_LLM_parser.py             ← parse_instruction() / parse_multi_instruction()
+│   ├── multi_action.py                  ← S5-3 multi-action instruction splitter
+│   ├── schema.py                        ← ParsedInstruction / MultiActionInstruction models
 │   ├── prompts.py                       ← System prompt + 6 few-shot examples
 │   ├── edge_cases.py                    ← Empty/vague/synonym handling
 │   ├── tracker.py                       ← Cross-domain pipeline task tracker
@@ -117,6 +118,7 @@ P54-Embodied-Multimodal-LLM-for-Industrial-Task-Planning/
 │   ├── test_llm_module.py               ← 40 tests (28 unit + 12 integration)
 │   ├── test_2.py                        ← 35 tests (24 unit + 11 integration)
 │   ├── test_sprint2.py                  ← 38 unit tests
+│   ├── test_multi_action.py             ← 43 tests (34 unit + 9 integration) — S5-3
 │   ├── integration_tests.py             ← 31 tests (29 unit + 2 integration)
 │   └── test_real_vision_adapter.py      ← 1 unit test
 │
@@ -390,6 +392,77 @@ The task planner supports positional instructions using offset-based spatial rea
 | in front of | (0.0, −1.5) | "move it in front of the workstation" |
 | behind | (0.0, +1.5) | "place it behind the workstation" |
 | in | (0.0, 0.0) | "place the block in the left tray" |
+
+---
+
+## Multi-Action Command Handling  *(S5-3, Sprint 5)*
+
+A single instruction may contain several sequential actions. They are split,
+parsed, planned and executed in the order they were written.
+
+```bash
+python main.py "move the green block to the left tray and then move the yellow block to the right tray"
+```
+
+```
+[1/5] LLM Parse (openai)
+      Multi-action: YES — 2 actions
+        1. move    object='green block'  dest='left tray'   (high)
+        2. move    object='yellow block' dest='right tray'  (high)
+[3/5] Task Planning
+      Actions planned : 2
+      Steps generated : 10
+```
+
+**How it works**
+
+| Stage | Module | Behaviour |
+|---|---|---|
+| Split | `llm_backend/multi_action.py` | `split_instruction()` breaks the sentence into ordered single-action segments. Deterministic — no API call. |
+| Parse | `llm_backend/custom_LLM_parser.py` | `parse_multi_instruction()` parses each segment with the existing `parse_instruction()` (cache, retries, synonym mapping and edge cases all still apply) and returns a `MultiActionInstruction`. |
+| Plan | `task_planner/planner.py` | `plan_multi_step()` builds one continuous `ActionPlan` with sequentially renumbered steps. |
+| Execute | `simulation_backend/executor.py` | Unchanged — it already executes an `ActionPlan` step by step. |
+
+**Splitting is object-driven, not connector-driven.** A connector only starts a
+new action if the segment after it names its own workspace object:
+
+| Instruction | Actions | Why |
+|---|---|---|
+| "pick up the red block **and** place it in the left tray" | 1 | one pick-and-place |
+| "grab the blue block **then** drop **it** near the workstation" | 1 | "it" refers back to the blue block |
+| "move the green block to the left tray **and then** move the **yellow block** to the right tray" | 2 | a second object is named |
+| "move the red block to the left tray, **then the blue block** to the right tray" | 2 | verb ellipsis — "move" is inherited |
+
+Connectors recognised: `and then`, `then`, `after that`, `afterwards`,
+`followed by`, `finally`, `;`, `, and`, and a comma directly before a verb.
+Bare `next` is excluded on purpose — "next to the blue block" is a spatial
+relation, not a sequence.
+
+**State tracking between actions**
+
+`plan_multi_step()` plans each action against a working copy of the scene that
+is updated after every sub-plan, so "move the red block to the left tray then
+move it to the right tray" targets the block where action 1 left it.
+
+It also tracks the gripper. The robot has one gripper, so an action that picks
+an object up and never puts it down blocks the next action. That is caught at
+plan time with a clear reason rather than failing halfway through execution:
+
+```
+Action 2/2 ('place the blue block in the right tray') needs the gripper, but the
+robot is still holding 'red block' from action 1. Give action 1 a destination,
+or place 'red block' before this action.
+```
+
+**Evidence**
+
+```bash
+python helper_scripts/demo_multi_action.py        # 9 valid + 2 safe-fail cases
+pytest tests/test_multi_action.py -v -m "not integration"   # 34 tests, no API key
+pytest tests/test_multi_action.py -v                        # + 9 live-LLM tests
+```
+
+Recorded output: `documentation/sprint5_multi_action_evidence.txt`
 
 ---
 

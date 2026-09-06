@@ -1,0 +1,202 @@
+==========================================================================
+  S5-3 Multi-Action Command Support — evidence run
+  LLM backend : openai
+  Robot       : MockRobot   Scene: 7 objects
+==========================================================================
+
+==========================================================================
+  MA01  Move the green block to the left tray and then move the yellow block to the right tray.
+==========================================================================
+  [1] Parse        : multi_action=True actions=2  (2756ms)
+        segment 1 : "Move the green block to the left tray"
+        segment 2 : "move the yellow block to the right tray"
+        action  1 : move    object='green block' dest='left tray' spatial='to' conf=high
+        action  2 : move    object='yellow block' dest='right tray' spatial='in' conf=high
+  [3] Plan         : 10 steps
+        Step 1: LOCATE 'green block'
+        Step 2: MOVE 'green block' → (1.5, 3.0)
+        Step 3: PICK 'green block'
+        Step 4: MOVE 'left tray' → (7.0, 1.0)
+        Step 5: PLACE 'left tray'
+        Step 6: LOCATE 'yellow block'
+        Step 7: MOVE 'yellow block' → (4.0, 2.5)
+        Step 8: PICK 'yellow block'
+        Step 9: MOVE 'right tray' → (8.0, 1.0)
+        Step 10: PLACE 'right tray'
+  [4] Execution    : SUCCESS — 10/10 steps (0ms)
+
+==========================================================================
+  MA02  Locate the red block, then move the blue block to the right tray.
+==========================================================================
+  [1] Parse        : multi_action=True actions=2  (1842ms)
+        segment 1 : "Locate the red block"
+        segment 2 : "move the blue block to the right tray"
+        action  1 : locate  object='red block' dest='-' spatial='-' conf=high
+        action  2 : move    object='blue block' dest='right tray' spatial='in' conf=high
+  [3] Plan         : 6 steps
+        Step 1: LOCATE 'red block'
+        Step 2: LOCATE 'blue block'
+        Step 3: MOVE 'blue block' → (3.0, 2.0)
+        Step 4: PICK 'blue block'
+        Step 5: MOVE 'right tray' → (8.0, 1.0)
+        Step 6: PLACE 'right tray'
+  [4] Execution    : SUCCESS — 6/6 steps (0ms)
+
+==========================================================================
+  MA03  Locate the yellow block then move the green block to the workstation.
+==========================================================================
+  [1] Parse        : multi_action=True actions=2  (1859ms)
+        segment 1 : "Locate the yellow block"
+        segment 2 : "move the green block to the workstation"
+        action  1 : locate  object='yellow block' dest='-' spatial='-' conf=high
+        action  2 : move    object='green block' dest='workstation' spatial='to' conf=high
+  [3] Plan         : 6 steps
+        Step 1: LOCATE 'yellow block'
+        Step 2: LOCATE 'green block'
+        Step 3: MOVE 'green block' → (1.5, 3.0)
+        Step 4: PICK 'green block'
+        Step 5: MOVE 'workstation' → (6.0, 5.0)
+        Step 6: PLACE 'workstation'
+  [4] Execution    : SUCCESS — 6/6 steps (0ms)
+
+==========================================================================
+  MA04  Move the red block to the left tray, then the blue block to the right tray, then locate the green block.
+==========================================================================
+  [1] Parse        : multi_action=True actions=3  (2967ms)
+        segment 1 : "Move the red block to the left tray"
+        segment 2 : "move the blue block to the right tray"
+        segment 3 : "locate the green block"
+        action  1 : move    object='red block' dest='left tray' spatial='to' conf=high
+        action  2 : move    object='blue block' dest='right tray' spatial='in' conf=high
+        action  3 : locate  object='green block' dest='-' spatial='-' conf=high
+  [3] Plan         : 11 steps
+        Step 1: LOCATE 'red block'
+        Step 2: MOVE 'red block' → (2.5, 1.0)
+        Step 3: PICK 'red block'
+        Step 4: MOVE 'left tray' → (7.0, 1.0)
+        Step 5: PLACE 'left tray'
+        Step 6: LOCATE 'blue block'
+        Step 7: MOVE 'blue block' → (3.0, 2.0)
+        Step 8: PICK 'blue block'
+        Step 9: MOVE 'right tray' → (8.0, 1.0)
+        Step 10: PLACE 'right tray'
+        Step 11: LOCATE 'green block'
+  [4] Execution    : SUCCESS — 11/11 steps (0ms)
+
+==========================================================================
+  MA05  Take the red block to the left tray then take the yellow block to the right tray and finally locate the blue block.
+==========================================================================
+  [1] Parse        : multi_action=True actions=3  (3076ms)
+        segment 1 : "Take the red block to the left tray"
+        segment 2 : "take the yellow block to the right tray"
+        segment 3 : "locate the blue block"
+        action  1 : move    object='red block' dest='left tray' spatial='to' conf=high
+        action  2 : move    object='yellow block' dest='right tray' spatial='to' conf=high
+        action  3 : locate  object='blue block' dest='-' spatial='-' conf=high
+  [3] Plan         : 11 steps
+        Step 1: LOCATE 'red block'
+        Step 2: MOVE 'red block' → (2.5, 1.0)
+        Step 3: PICK 'red block'
+        Step 4: MOVE 'left tray' → (7.0, 1.0)
+        Step 5: PLACE 'left tray'
+        Step 6: LOCATE 'yellow block'
+        Step 7: MOVE 'yellow block' → (4.0, 2.5)
+        Step 8: PICK 'yellow block'
+        Step 9: MOVE 'right tray' → (9.0, 1.0)
+        Step 10: PLACE 'right tray'
+        Step 11: LOCATE 'blue block'
+  [4] Execution    : SUCCESS — 11/11 steps (0ms)
+
+==========================================================================
+  MA06  Pick up the red block and place it in the left tray, then pick up the blue block and place it in the right tray.
+==========================================================================
+  [1] Parse        : multi_action=True actions=2  (1939ms)
+        segment 1 : "Pick up the red block and place it in the left tray"
+        segment 2 : "pick up the blue block and place it in the right tray"
+        action  1 : pick    object='red block' dest='left tray' spatial='in' conf=high
+        action  2 : pick    object='blue block' dest='right tray' spatial='in' conf=high
+  [3] Plan         : 10 steps
+        Step 1: LOCATE 'red block'
+        Step 2: MOVE 'red block' → (2.5, 1.0)
+        Step 3: PICK 'red block'
+        Step 4: MOVE 'left tray' → (6.0, 1.0)
+        Step 5: PLACE 'left tray'
+        Step 6: LOCATE 'blue block'
+        Step 7: MOVE 'blue block' → (3.0, 2.0)
+        Step 8: PICK 'blue block'
+        Step 9: MOVE 'right tray' → (8.0, 1.0)
+        Step 10: PLACE 'right tray'
+  [4] Execution    : SUCCESS — 10/10 steps (0ms)
+
+==========================================================================
+  MA07  Move the red block to the left tray; move the yellow block to the workstation.
+==========================================================================
+  [1] Parse        : multi_action=True actions=2  (1933ms)
+        segment 1 : "Move the red block to the left tray"
+        segment 2 : "move the yellow block to the workstation"
+        action  1 : move    object='red block' dest='left tray' spatial='in' conf=high
+        action  2 : move    object='yellow block' dest='workstation' spatial='to' conf=high
+  [3] Plan         : 10 steps
+        Step 1: LOCATE 'red block'
+        Step 2: MOVE 'red block' → (2.5, 1.0)
+        Step 3: PICK 'red block'
+        Step 4: MOVE 'left tray' → (6.0, 1.0)
+        Step 5: PLACE 'left tray'
+        Step 6: LOCATE 'yellow block'
+        Step 7: MOVE 'yellow block' → (4.0, 2.5)
+        Step 8: PICK 'yellow block'
+        Step 9: MOVE 'workstation' → (6.0, 5.0)
+        Step 10: PLACE 'workstation'
+  [4] Execution    : SUCCESS — 10/10 steps (0ms)
+
+==========================================================================
+  SA01  Pick up the red block and place it in the left tray.
+==========================================================================
+  [1] Parse        : multi_action=False actions=1  (1041ms)
+        segment 1 : "Pick up the red block and place it in the left tray"
+        action  1 : pick    object='red block' dest='left tray' spatial='in' conf=high
+  [3] Plan         : 5 steps
+        Step 1: LOCATE 'red block'
+        Step 2: MOVE 'red block' → (2.5, 1.0)
+        Step 3: PICK 'red block'
+        Step 4: MOVE 'left tray' → (6.0, 1.0)
+        Step 5: PLACE 'left tray'
+  [4] Execution    : SUCCESS — 5/5 steps (0ms)
+
+==========================================================================
+  SA02  Grab the blue block then drop it near the workstation.
+==========================================================================
+  [1] Parse        : multi_action=False actions=1  (1115ms)
+        segment 1 : "Grab the blue block then drop it near the workstation"
+        action  1 : pick    object='blue block' dest='workstation' spatial='near' conf=high
+  [3] Plan         : 5 steps
+        Step 1: LOCATE 'blue block'
+        Step 2: MOVE 'blue block' → (3.0, 2.0)
+        Step 3: PICK 'blue block'
+        Step 4: MOVE 'workstation' → (5.8, 5.8)
+        Step 5: PLACE 'workstation'
+  [4] Execution    : SUCCESS — 5/5 steps (0ms)
+
+==========================================================================
+  NEG1  Move the purple block to the left tray then move the green block to the right tray.
+==========================================================================
+  [1] Parse        : multi_action=True actions=2  (1999ms)
+        segment 1 : "Move the purple block to the left tray"
+        segment 2 : "move the green block to the right tray"
+        action  1 : move    object='purple block' dest='left tray' spatial='to' conf=low
+        action  2 : move    object='green block' dest='right tray' spatial='to' conf=high
+  [3] PLAN FAILED SAFELY — Action 1/2 ('Move the purple block to the left tray') could not be planned: Object 'purple block' not found in scene
+
+==========================================================================
+  NEG2  Pick up the red block, then place the blue block in the right tray.
+==========================================================================
+  [1] Parse        : multi_action=True actions=2  (2441ms)
+        segment 1 : "Pick up the red block"
+        segment 2 : "place the blue block in the right tray"
+        action  1 : pick    object='red block' dest='-' spatial='-' conf=high
+        action  2 : place   object='blue block' dest='right tray' spatial='in' conf=high
+  [3] PLAN FAILED SAFELY — Action 2/2 ('place the blue block in the right tray') needs the gripper, but the robot is still holding 'red block' from action 1. Give action 1 a destination, or place 'red block' before this action.
+
+==========================================================================
+  9/11 cases executed successfully (NEG1/NEG2 are expected to fail safely)
+==========================================================================

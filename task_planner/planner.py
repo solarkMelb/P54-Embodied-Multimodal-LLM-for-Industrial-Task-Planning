@@ -42,6 +42,14 @@ SPATIAL_OFFSETS: dict[str, tuple[float, float]] = {
     "in front of":( 0.0, -1.5),
     "behind":     ( 0.0,  1.5),
     "in":         ( 0.0,  0.0),   # inside container → use container position
+    # S5-3: "move X to the left tray" parses as spatial_relation="to". Without
+    # these, "to"/"into"/"onto" fell through to DEFAULT_OFFSET and the drop-off
+    # landed 1.0 units off the container centre.
+    "to":         ( 0.0,  0.0),
+    "into":       ( 0.0,  0.0),
+    "onto":       ( 0.0,  0.0),
+    "inside":     ( 0.0,  0.0),
+    "at":         ( 0.0,  0.0),
 }
 
 DEFAULT_OFFSET = (1.0, 0.0)  # fallback when relation not in map

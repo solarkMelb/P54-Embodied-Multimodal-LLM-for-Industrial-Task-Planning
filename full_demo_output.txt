@@ -1,0 +1,635 @@
+ Container p54_ollama Running 
+ Container p54_ollama Running 
+ Container p54-embodied-multimodal-llm-for-industrial-task-planning-p54-run-04bbdfb4d3c2 Creating 
+ Container p54-embodied-multimodal-llm-for-industrial-task-planning-p54-run-04bbdfb4d3c2 Created 
+pybullet build time: Sep  2 2026 13:22:51
+2026-09-11 15:30:10,231 [INFO] Config loaded from: /app/simulation_backend/scene_config.yaml
+2026-09-11 15:30:10,238 [INFO] PyBullet connected — mode=DIRECT client=0
+2026-09-11 15:30:10,371 [INFO] Workspace built successfully.
+2026-09-11 15:30:10,371 [INFO] Workspace built.
+2026-09-11 15:30:10,384 [ERROR] Failed to load 'workstation' from simulation_backend/assets/block_urdf/workstation.urdf: Cannot load URDF file.
+2026-09-11 15:30:10,384 [INFO] Loaded 6 objects into simulation.
+2026-09-11 15:30:10,384 [INFO] Loaded 6 objects into registry.
+2026-09-11 15:30:10,385 [INFO] Camera initialised — 640×480  fov=60.0°  pos=[1.5, 0.0, 1.8]
+2026-09-11 15:30:10,385 [INFO] No primary detector — using ground truth only.
+2026-09-11 15:30:10,385 [INFO] Robot: MockRobot (ROBOT_MODEL=mock or unset).
+2026-09-11 15:30:10,385 [INFO] Simulation initialised successfully.
+2026-09-11 15:30:10,386 [INFO] [Cache] HIT — 'pick up the red block and place it in the left tra'
+2026-09-11 15:30:10,387 [INFO] [Cache] Returning cached result for: 'pick up the red block and place it in the left tray'
+2026-09-11 15:30:10,387 [WARNING] body_id=6 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:10,387 [WARNING] body_id=7 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:10,387 [WARNING] body_id=8 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:10,387 [WARNING] body_id=9 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:10,387 [WARNING] body_id=10 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:10,387 [WARNING] body_id=11 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:10,388 [INFO] Planning: action=pick, object=red block, destination=left tray, spatial=in
+2026-09-11 15:30:10,388 [INFO] Spatial offset applied: 'in' to (0.65, 0.45) → (0.65, 0.45)
+2026-09-11 15:30:10,388 [INFO] Scene loaded: 6 objects
+  Simulation started — 6 objects loaded.
+
+════════════════════════════════════════════════════════════
+  PIPELINE START
+  Instruction : pick up the red block and place it in the left tray
+  Model       : ollama
+  Vision      : Live Simulation
+  Task ID     : f07ff0ee
+════════════════════════════════════════════════════════════
+
+  [1/5] LLM Parse (ollama)
+       Action      : pick
+       Object      : red block
+       Destination : left tray
+       Spatial     : in
+       Confidence  : high
+       Latency     : 2ms
+
+  [2/5] Vision Lookup  [Live Simulation]
+       Detector        : none
+       Objects found   : 6
+       Label                Source           Conf  Position (x, y)
+       ──────────────────── ────────────── ──────  ────────────────────
+       red block            [ground_truth]   1.00  (0.450, -0.200)
+       blue block           [ground_truth]   1.00  (0.600, 0.100)
+       green block          [ground_truth]   1.00  (0.300, 0.200)
+       yellow block         [ground_truth]   1.00  (0.550, -0.100)
+       left tray            [ground_truth]   1.00  (0.650, 0.450)
+       right tray           [ground_truth]   1.00  (0.650, -0.450)
+       Objects in scene: ['red block', 'blue block', 'green block', 'yellow block', 'left tray', 'right tray']
+       Latency         : 1ms
+
+  [3/5] Task Planning
+       Steps generated : 5
+       Step 1: LOCATE 'red block'
+       Step 2: MOVE 'red block' → (0.45, -0.2)
+       Step 3: PICK 'red block'
+       Step 4: MOVE 'left tray' → (0.65, 0.45)
+       Step 5: PLACE 'left tray'
+
+  [4/5] Execution  [MockRobot]
+
+───────────────────────────────────────────────────────
+  Action Plan — 5 steps
+  Instruction: pick up the red block and place it in the left tray
+  Task ID:     f07ff0ee
+───────────────────────────────────────────────────────
+  Step 1: LOCATE 'red block'
+    → Confirm 'red block' in scene at (0.45, -0.2)
+  Step 2: MOVE 'red block' → (0.45, -0.2)
+    → Navigate arm to 'red block'
+  Step 3: PICK 'red block'
+    → Grasp 'red block'
+  Step 4: MOVE 'left tray' → (0.65, 0.45)
+    → Navigate to 'left tray [in]'
+  Step 5: PLACE 'left tray'
+    → Place 'red block' at 'left tray [in]'
+───────────────────────────────────────────────────────
+
+Executing plan...
+
+  Step 1: LOCATE «red block» Found 'red block' at (0.45, -0.2)
+  Step 2: MOVE «red block» Moved to 'red block' at (0.45, -0.2)
+  Step 3: PICK «red block» Picked up 'red block' at (0.45, -0.2)
+  Step 4: MOVE «left tray» Moved to 'left tray' at (0.65, 0.45)
+  Step 5: PLACE «left tray» 2026-09-11 15:30:10,394 [INFO] PyBullet disconnected.
+Placed 'red block' at 'left tray' (0.65, 0.45)
+
+  ✓ Plan completed successfully in 0ms
+
+  [5/5] Feedback & Validation
+       ✓ Task completed — 5/5 steps
+
+════════════════════════════════════════════════════════════
+  PIPELINE COMPLETE  ✓  Task ID: f07ff0ee
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  Task ID:     f07ff0ee
+  Instruction: pick up the red block and place it in the left tray
+  Model:       ollama
+  Status:      COMPLETED
+  Created:     2026-09-11T15:30:10.385783+00:00
+────────────────────────────────────────────────────────────
+  ✓  LLM Instruction Parser              [success]      2ms
+  ✓  Vision Module / Scene Lookup        [success]      0ms
+  ✓  Task Planning Module                [success]      0ms
+  ✓  Execution Module                    [success]        —
+  ✓  Validation & Feedback               [success]        —
+────────────────────────────────────────────────────────────
+
+ Container p54_ollama Running 
+ Container p54-embodied-multimodal-llm-for-industrial-task-planning-p54-run-3dceebe8165a Creating 
+ Container p54-embodied-multimodal-llm-for-industrial-task-planning-p54-run-3dceebe8165a Created 
+pybullet build time: Sep  2 2026 13:22:51
+2026-09-11 15:30:11,302 [INFO] Config loaded from: /app/simulation_backend/scene_config.yaml
+2026-09-11 15:30:11,307 [INFO] PyBullet connected — mode=DIRECT client=0
+2026-09-11 15:30:11,461 [INFO] Workspace built successfully.
+2026-09-11 15:30:11,461 [INFO] Workspace built.
+2026-09-11 15:30:11,471 [ERROR] Failed to load 'workstation' from simulation_backend/assets/block_urdf/workstation.urdf: Cannot load URDF file.
+2026-09-11 15:30:11,471 [INFO] Loaded 6 objects into simulation.
+2026-09-11 15:30:11,471 [INFO] Loaded 6 objects into registry.
+2026-09-11 15:30:11,471 [INFO] Camera initialised — 640×480  fov=60.0°  pos=[1.5, 0.0, 1.8]
+2026-09-11 15:30:11,471 [INFO] No primary detector — using ground truth only.
+2026-09-11 15:30:11,471 [INFO] Robot: MockRobot (ROBOT_MODEL=mock or unset).
+2026-09-11 15:30:11,471 [INFO] Simulation initialised successfully.
+2026-09-11 15:30:11,473 [INFO] [Cache] HIT — 'place the red block to the left of the blue block'
+2026-09-11 15:30:11,473 [INFO] [Cache] Returning cached result for: 'place the red block to the left of the blue block'
+2026-09-11 15:30:11,474 [WARNING] body_id=6 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:11,474 [WARNING] body_id=7 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:11,474 [WARNING] body_id=8 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:11,474 [WARNING] body_id=9 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:11,474 [WARNING] body_id=10 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:11,474 [WARNING] body_id=11 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:11,474 [INFO] Planning: action=place, object=red block, destination=blue block, spatial=left of
+2026-09-11 15:30:11,474 [INFO] Spatial offset applied: 'left of' to (0.6, 0.1) → (-0.9, 0.1)
+2026-09-11 15:30:11,474 [INFO] Scene loaded: 6 objects
+  Simulation started — 6 objects loaded.
+
+════════════════════════════════════════════════════════════
+  PIPELINE START
+  Instruction : place the red block to the left of the blue block
+  Model       : ollama
+  Vision      : Live Simulation
+  Task ID     : fe41429f
+════════════════════════════════════════════════════════════
+
+  [1/5] LLM Parse (ollama)
+       Action      : place
+       Object      : red block
+       Destination : blue block
+       Spatial     : left of
+       Confidence  : high
+       Latency     : 2ms
+
+  [2/5] Vision Lookup  [Live Simulation]
+       Detector        : none
+       Objects found   : 6
+       Label                Source           Conf  Position (x, y)
+       ──────────────────── ────────────── ──────  ────────────────────
+       red block            [ground_truth]   1.00  (0.450, -0.200)
+       blue block           [ground_truth]   1.00  (0.600, 0.100)
+       green block          [ground_truth]   1.00  (0.300, 0.200)
+       yellow block         [ground_truth]   1.00  (0.550, -0.100)
+       left tray            [ground_truth]   1.00  (0.650, 0.450)
+       right tray           [ground_truth]   1.00  (0.650, -0.450)
+       Objects in scene: ['red block', 'blue block', 'green block', 'yellow block', 'left tray', 'right tray']
+       Latency         : 0ms
+
+  [3/5] Task Planning
+       Steps generated : 5
+       Step 1: LOCATE 'red block'
+       Step 2: MOVE 'red block' → (0.45, -0.2)
+       Step 3: PICK 'red block'
+       Step 4: MOVE 'blue block' → (-0.9, 0.1)
+       Step 5: PLACE 'blue block'
+
+  [4/5] Execution  [MockRobot]
+
+───────────────────────────────────────────────────────
+  Action Plan — 5 steps
+  Instruction: place the red block to the left of the blue block
+  Task ID:     fe41429f
+───────────────────────────────────────────────────────
+  Step 1: LOCATE 'red block'
+    → Confirm 'red block' exists at (0.45, -0.2)
+  Step 2: MOVE 'red block' → (0.45, -0.2)
+    → Navigate to 'red block'
+  Step 3: PICK 'red block'
+    → Grasp 'red block'
+  Step 4: MOVE 'blue block' → (-0.9, 0.1)
+    → Navigate to 'blue block [left of]'
+  Step 5: PLACE 'blue block'
+    → Release 'red block' at 'blue block [left of]'
+───────────────────────────────────────────────────────
+
+Executing plan...
+
+  Step 1: LOCATE «red block» Found 'red block' at (0.45, -0.2)
+  Step 2: MOVE «red block» Moved to 'red block' at (0.45, -0.2)
+  Step 3: PICK «red block» Picked up 'red block' at (0.45, -0.2)
+  Step 4: MOVE «blue block» Moved to 'blue block' at (0.6, 0.1)
+  Step 5: PLACE «blue block» 2026-09-11 15:30:11,476 [INFO] PyBullet disconnected.
+Placed 'red block' at 'blue block' (0.6, 0.1)
+
+  ✓ Plan completed successfully in 0ms
+
+  [5/5] Feedback & Validation
+       ✓ Task completed — 5/5 steps
+
+════════════════════════════════════════════════════════════
+  PIPELINE COMPLETE  ✓  Task ID: fe41429f
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  Task ID:     fe41429f
+  Instruction: place the red block to the left of the blue block
+  Model:       ollama
+  Status:      COMPLETED
+  Created:     2026-09-11T15:30:11.472196+00:00
+────────────────────────────────────────────────────────────
+  ✓  LLM Instruction Parser              [success]      2ms
+  ✓  Vision Module / Scene Lookup        [success]      0ms
+  ✓  Task Planning Module                [success]      0ms
+  ✓  Execution Module                    [success]        —
+  ✓  Validation & Feedback               [success]        —
+────────────────────────────────────────────────────────────
+
+ Container p54_ollama Running 
+ Container p54-embodied-multimodal-llm-for-industrial-task-planning-p54-run-71ec1e467f66 Creating 
+ Container p54-embodied-multimodal-llm-for-industrial-task-planning-p54-run-71ec1e467f66 Created 
+pybullet build time: Sep  2 2026 13:22:51
+2026-09-11 15:30:12,323 [INFO] Config loaded from: /app/simulation_backend/scene_config.yaml
+2026-09-11 15:30:12,327 [INFO] PyBullet connected — mode=DIRECT client=0
+2026-09-11 15:30:12,490 [INFO] Workspace built successfully.
+2026-09-11 15:30:12,490 [INFO] Workspace built.
+2026-09-11 15:30:12,496 [ERROR] Failed to load 'workstation' from simulation_backend/assets/block_urdf/workstation.urdf: Cannot load URDF file.
+2026-09-11 15:30:12,496 [INFO] Loaded 6 objects into simulation.
+2026-09-11 15:30:12,497 [INFO] Loaded 6 objects into registry.
+2026-09-11 15:30:12,497 [INFO] Camera initialised — 640×480  fov=60.0°  pos=[1.5, 0.0, 1.8]
+2026-09-11 15:30:12,497 [INFO] No primary detector — using ground truth only.
+2026-09-11 15:30:12,497 [INFO] Robot: MockRobot (ROBOT_MODEL=mock or unset).
+2026-09-11 15:30:12,497 [INFO] Simulation initialised successfully.
+2026-09-11 15:30:12,499 [INFO] [Cache] HIT — 'grab the green block and drop it in the left tray'
+2026-09-11 15:30:12,500 [INFO] PyBullet disconnected.
+  Simulation started — 6 objects loaded.
+
+════════════════════════════════════════════════════════════
+  PIPELINE START
+  Instruction : grab the green block and drop it in the left tray
+  Model       : ollama
+  Vision      : Live Simulation
+  Task ID     : 7465f47b
+════════════════════════════════════════════════════════════
+
+  [1/5] LLM Parse (ollama)
+       ✗ LLM parse failed: [Errno 35] Resource deadlock avoided
+ Container p54_ollama Running 
+ Container p54-embodied-multimodal-llm-for-industrial-task-planning-p54-run-7da2a3482572 Creating 
+ Container p54-embodied-multimodal-llm-for-industrial-task-planning-p54-run-7da2a3482572 Created 
+pybullet build time: Sep  2 2026 13:22:51
+2026-09-11 15:30:13,393 [INFO] Config loaded from: /app/simulation_backend/scene_config.yaml
+2026-09-11 15:30:13,398 [INFO] PyBullet connected — mode=DIRECT client=0
+2026-09-11 15:30:13,537 [INFO] Workspace built successfully.
+2026-09-11 15:30:13,537 [INFO] Workspace built.
+2026-09-11 15:30:13,582 [ERROR] Failed to load 'workstation' from simulation_backend/assets/block_urdf/workstation.urdf: Cannot load URDF file.
+2026-09-11 15:30:13,582 [INFO] Loaded 6 objects into simulation.
+2026-09-11 15:30:13,582 [INFO] Loaded 6 objects into registry.
+2026-09-11 15:30:13,583 [INFO] Camera initialised — 640×480  fov=60.0°  pos=[1.5, 0.0, 1.8]
+2026-09-11 15:30:13,583 [INFO] No primary detector — using ground truth only.
+2026-09-11 15:30:13,583 [INFO] Robot: MockRobot (ROBOT_MODEL=mock or unset).
+2026-09-11 15:30:13,583 [INFO] Simulation initialised successfully.
+2026-09-11 15:30:13,584 [INFO] [Cache] HIT — 'put that thing over there'
+2026-09-11 15:30:13,585 [INFO] [Cache] Returning cached result for: 'put that thing over there'
+2026-09-11 15:30:13,585 [INFO] PyBullet disconnected.
+  Simulation started — 6 objects loaded.
+
+════════════════════════════════════════════════════════════
+  PIPELINE START
+  Instruction : put that thing over there
+  Model       : ollama
+  Vision      : Live Simulation
+  Task ID     : cde7960d
+════════════════════════════════════════════════════════════
+
+  [1/5] LLM Parse (ollama)
+       Action      : place
+       Object      : unknown
+       Destination : unknown
+       Spatial     : —
+       Confidence  : low
+       Latency     : 1ms
+
+  ⚠  Low confidence — instruction may be ambiguous
+     Notes: Instruction is too vague. Object and destination are not specified. Object target could not be determined from instruction. Destination could not be determined from instruction.
+ Container p54_ollama Running 
+ Container p54-embodied-multimodal-llm-for-industrial-task-planning-p54-run-bf878c2eed36 Creating 
+ Container p54-embodied-multimodal-llm-for-industrial-task-planning-p54-run-bf878c2eed36 Created 
+pybullet build time: Sep  2 2026 13:22:51
+2026-09-11 15:30:14,444 [INFO] Config loaded from: /app/simulation_backend/scene_config.yaml
+2026-09-11 15:30:14,449 [INFO] PyBullet connected — mode=DIRECT client=0
+2026-09-11 15:30:14,565 [INFO] Workspace built successfully.
+2026-09-11 15:30:14,565 [INFO] Workspace built.
+2026-09-11 15:30:14,571 [ERROR] Failed to load 'workstation' from simulation_backend/assets/block_urdf/workstation.urdf: Cannot load URDF file.
+2026-09-11 15:30:14,571 [INFO] Loaded 6 objects into simulation.
+2026-09-11 15:30:14,571 [INFO] Loaded 6 objects into registry.
+2026-09-11 15:30:14,571 [INFO] Camera initialised — 640×480  fov=60.0°  pos=[1.5, 0.0, 1.8]
+2026-09-11 15:30:14,571 [INFO] No primary detector — using ground truth only.
+2026-09-11 15:30:14,571 [INFO] Robot: MockRobot (ROBOT_MODEL=mock or unset).
+2026-09-11 15:30:14,571 [INFO] Simulation initialised successfully.
+2026-09-11 15:30:14,579 [INFO] [Cache] HIT — 'PICK UP THE RED BLOCK'
+2026-09-11 15:30:14,581 [INFO] [Cache] Returning cached result for: 'PICK UP THE RED BLOCK'
+2026-09-11 15:30:14,581 [WARNING] body_id=6 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:14,581 [WARNING] body_id=7 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:14,581 [WARNING] body_id=8 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:14,581 [WARNING] body_id=9 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:14,581 [WARNING] body_id=10 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:14,581 [WARNING] body_id=11 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:14,581 [INFO] Planning: action=pick, object=red block, destination=None, spatial=None
+2026-09-11 15:30:14,582 [INFO] Scene loaded: 6 objects
+  Simulation started — 6 objects loaded.
+
+════════════════════════════════════════════════════════════
+  PIPELINE START
+  Instruction : PICK UP THE RED BLOCK
+  Model       : ollama
+  Vision      : Live Simulation
+  Task ID     : 1f70e6f8
+════════════════════════════════════════════════════════════
+
+  [1/5] LLM Parse (ollama)
+       Action      : pick
+       Object      : red block
+       Destination : —
+       Spatial     : —
+       Confidence  : high
+       Latency     : 7ms
+
+  [2/5] Vision Lookup  [Live Simulation]
+       Detector        : none
+       Objects found   : 6
+       Label                Source           Conf  Position (x, y)
+       ──────────────────── ────────────── ──────  ────────────────────
+       red block            [ground_truth]   1.00  (0.450, -0.200)
+       blue block           [ground_truth]   1.00  (0.600, 0.100)
+       green block          [ground_truth]   1.00  (0.300, 0.200)
+       yellow block         [ground_truth]   1.00  (0.550, -0.100)
+       left tray            [ground_truth]   1.00  (0.650, 0.450)
+       right tray           [ground_truth]   1.00  (0.650, -0.450)
+       Objects in scene: ['red block', 'blue block', 'green block', 'yellow block', 'left tray', 'right tray']
+       Latency         : 0ms
+
+  [3/5] Task Planning
+       Steps generated : 3
+       Step 1: LOCATE 'red block'
+       Step 2: MOVE 'red block' → (0.45, -0.2)
+       Step 3: PICK 'red block'
+
+  [4/5] Execution  [MockRobot]
+
+───────────────────────────────────────────────────────
+  Action Plan — 3 steps
+  Instruction: pick up the red block
+  Task ID:     1f70e6f8
+───────────────────────────────────────────────────────
+  Step 1: LOCATE 'red block'
+    → Confirm 'red block' in scene at (0.45, -0.2)
+  Step 2: MOVE 'red block' → (0.45, -0.2)
+    → Navigate arm to 'red block'
+  Step 3: PICK 'red block'
+    → Grasp 'red block'
+───────────────────────────────────────────────────────
+
+Executing plan...
+
+  Step 1: LOCATE «red block» Found 'red block' at (0.45, -0.2)
+  Step 2: MOVE «red block» Moved to 'red block' at (0.45, -0.2)
+  Step 3: PICK «red block» Picked up 'red block' at (0.45, -0.2)
+
+  ✓ Plan completed successfully in 0ms
+
+  [5/5] Feedback & Validation
+       ✓ Task completed — 3/3 steps
+
+════════════════════════════════════════════════════════════
+  PIPELINE COMPLETE  ✓  Task ID: 1f70e6f8
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  Task ID:     1f70e6f8
+  Instruction: PICK UP THE RED BLOCK
+  Model:       ollama
+  Status:      COMPLETED
+  Created:     2026-09-11T15:30:14.574731+00:00
+────────────────────────────────────────────────────────────
+  ✓  LLM Instruction Parser              [success]      7ms
+  ✓  Vision Module / Scene Lookup        [success]      0ms
+  ✓  Task Planning Module                [success]      0ms
+  ✓  Execution Module                    [success]        —
+  ✓  Validation & Feedback               [success]        —
+────────────────────────────────────────────────────────────
+
+2026-09-11 15:30:14,586 [INFO] PyBullet disconnected.
+ Container p54_ollama Running 
+ Container p54-embodied-multimodal-llm-for-industrial-task-planning-p54-run-a608f76ae78f Creating 
+ Container p54-embodied-multimodal-llm-for-industrial-task-planning-p54-run-a608f76ae78f Created 
+pybullet build time: Sep  2 2026 13:22:51
+2026-09-11 15:30:15,455 [INFO] Config loaded from: /app/simulation_backend/scene_config.yaml
+2026-09-11 15:30:15,460 [INFO] PyBullet connected — mode=DIRECT client=0
+2026-09-11 15:30:15,593 [INFO] Workspace built successfully.
+2026-09-11 15:30:15,594 [INFO] Workspace built.
+2026-09-11 15:30:15,622 [ERROR] Failed to load 'workstation' from simulation_backend/assets/block_urdf/workstation.urdf: Cannot load URDF file.
+2026-09-11 15:30:15,622 [INFO] Loaded 6 objects into simulation.
+2026-09-11 15:30:15,622 [INFO] Loaded 6 objects into registry.
+2026-09-11 15:30:15,622 [INFO] Camera initialised — 640×480  fov=60.0°  pos=[1.5, 0.0, 1.8]
+2026-09-11 15:30:15,622 [INFO] No primary detector — using ground truth only.
+2026-09-11 15:30:15,622 [INFO] Robot: MockRobot (ROBOT_MODEL=mock or unset).
+2026-09-11 15:30:15,622 [INFO] Simulation initialised successfully.
+2026-09-11 15:30:15,623 [INFO] [Cache] HIT — 'pick up the red block'
+2026-09-11 15:30:15,625 [INFO] [Cache] Returning cached result for: 'pick up the red block'
+2026-09-11 15:30:15,625 [WARNING] body_id=6 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:15,625 [WARNING] body_id=7 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:15,625 [WARNING] body_id=8 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:15,625 [WARNING] body_id=9 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:15,625 [WARNING] body_id=10 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:15,625 [WARNING] body_id=11 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:15,625 [INFO] Planning: action=pick, object=red block, destination=None, spatial=None
+2026-09-11 15:30:15,625 [INFO] Scene loaded: 6 objects
+  Simulation started — 6 objects loaded.
+
+════════════════════════════════════════════════════════════
+  PIPELINE START
+  Instruction : pick up the red block
+  Model       : ollama
+  Vision      : Live Simulation
+  Task ID     : 1171def2
+════════════════════════════════════════════════════════════
+
+  [1/5] LLM Parse (ollama)
+       Action      : pick
+       Object      : red block
+       Destination : —
+       Spatial     : —
+       Confidence  : high
+       Latency     : 2ms
+
+  [2/5] Vision Lookup  [Live Simulation]
+       Detector        : none
+       Objects found   : 6
+       Label                Source           Conf  Position (x, y)
+       ──────────────────── ────────────── ──────  ────────────────────
+       red block            [ground_truth]   1.00  (0.450, -0.200)
+       blue block           [ground_truth]   1.00  (0.600, 0.100)
+       green block          [ground_truth]   1.00  (0.300, 0.200)
+       yellow block         [ground_truth]   1.00  (0.550, -0.100)
+       left tray            [ground_truth]   1.00  (0.650, 0.450)
+       right tray           [ground_truth]   1.00  (0.650, -0.450)
+       Objects in scene: ['red block', 'blue block', 'green block', 'yellow block', 'left tray', 'right tray']
+       Latency         : 0ms
+
+  [3/5] Task Planning
+       Steps generated : 3
+       Step 1: LOCATE 'red block'
+       Step 2: MOVE 'red block' → (0.45, -0.2)
+       Step 3: PICK 'red block'
+
+  [4/5] Execution  [MockRobot]
+
+───────────────────────────────────────────────────────
+  Action Plan — 3 steps
+  Instruction: pick up the red block
+  Task ID:     1171def2
+───────────────────────────────────────────────────────
+  Step 1: LOCATE 'red block'
+    → Confirm 'red block' in scene at (0.45, -0.2)
+  Step 2: MOVE 'red block' → (0.45, -0.2)
+    → Navigate arm to 'red block'
+  Step 3: PICK 'red block'
+    → Grasp 'red block'
+───────────────────────────────────────────────────────
+
+Executing plan...
+
+  Step 1: LOCATE «red block» Found 'red block' at (0.45, -0.2)
+  Step 2: MOVE «red block» Moved to 'red block' at (0.45, -0.2)
+  Step 3: PICK «red block» 2026-09-11 15:30:15,628 [INFO] PyBullet disconnected.
+Picked up 'red block' at (0.45, -0.2)
+
+  ✓ Plan completed successfully in 0ms
+
+  [5/5] Feedback & Validation
+       ✓ Task completed — 3/3 steps
+
+════════════════════════════════════════════════════════════
+  PIPELINE COMPLETE  ✓  Task ID: 1171def2
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  Task ID:     1171def2
+  Instruction: pick up the red block
+  Model:       ollama
+  Status:      COMPLETED
+  Created:     2026-09-11T15:30:15.623045+00:00
+────────────────────────────────────────────────────────────
+  ✓  LLM Instruction Parser              [success]      2ms
+  ✓  Vision Module / Scene Lookup        [success]      0ms
+  ✓  Task Planning Module                [success]      0ms
+  ✓  Execution Module                    [success]        —
+  ✓  Validation & Feedback               [success]        —
+────────────────────────────────────────────────────────────
+
+docker compose run --rm p54 python main.py "pick up the red block"  0.06s user 0.03s system 8% cpu 1.015 total
+ Container p54_ollama Running 
+ Container p54-embodied-multimodal-llm-for-industrial-task-planning-p54-run-f2c04b1f4619 Creating 
+ Container p54-embodied-multimodal-llm-for-industrial-task-planning-p54-run-f2c04b1f4619 Created 
+pybullet build time: Sep  2 2026 13:22:51
+2026-09-11 15:30:16,489 [INFO] Config loaded from: /app/simulation_backend/scene_config.yaml
+2026-09-11 15:30:16,493 [INFO] PyBullet connected — mode=DIRECT client=0
+2026-09-11 15:30:16,609 [INFO] Workspace built successfully.
+2026-09-11 15:30:16,609 [INFO] Workspace built.
+2026-09-11 15:30:16,656 [ERROR] Failed to load 'workstation' from simulation_backend/assets/block_urdf/workstation.urdf: Cannot load URDF file.
+2026-09-11 15:30:16,656 [INFO] Loaded 6 objects into simulation.
+2026-09-11 15:30:16,656 [INFO] Loaded 6 objects into registry.
+2026-09-11 15:30:16,656 [INFO] Camera initialised — 640×480  fov=60.0°  pos=[1.5, 0.0, 1.8]
+2026-09-11 15:30:16,656 [INFO] No primary detector — using ground truth only.
+2026-09-11 15:30:16,657 [INFO] Robot: MockRobot (ROBOT_MODEL=mock or unset).
+2026-09-11 15:30:16,657 [INFO] Simulation initialised successfully.
+2026-09-11 15:30:16,661 [INFO] [Cache] HIT — 'pick up the red block'
+2026-09-11 15:30:16,662 [INFO] [Cache] Returning cached result for: 'pick up the red block'
+2026-09-11 15:30:16,662 [WARNING] body_id=6 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:16,663 [WARNING] body_id=7 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:16,663 [WARNING] body_id=8 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:16,663 [WARNING] body_id=9 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:16,663 [WARNING] body_id=10 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:16,663 [WARNING] body_id=11 not in detector or segmentation — using ground truth fallback
+2026-09-11 15:30:16,663 [INFO] Planning: action=pick, object=red block, destination=None, spatial=None
+2026-09-11 15:30:16,663 [INFO] Scene loaded: 6 objects
+  Simulation started — 6 objects loaded.
+
+════════════════════════════════════════════════════════════
+  PIPELINE START
+  Instruction : pick up the red block
+  Model       : ollama
+  Vision      : Live Simulation
+  Task ID     : 0fed0429
+════════════════════════════════════════════════════════════
+
+  [1/5] LLM Parse (ollama)
+       Action      : pick
+       Object      : red block
+       Destination : —
+       Spatial     : —
+       Confidence  : high
+       Latency     : 2ms
+
+  [2/5] Vision Lookup  [Live Simulation]
+       Detector        : none
+       Objects found   : 6
+       Label                Source           Conf  Position (x, y)
+       ──────────────────── ────────────── ──────  ────────────────────
+       red block            [ground_truth]   1.00  (0.450, -0.200)
+       blue block           [ground_truth]   1.00  (0.600, 0.100)
+       green block          [ground_truth]   1.00  (0.300, 0.200)
+       yellow block         [ground_truth]   1.00  (0.550, -0.100)
+       left tray            [ground_truth]   1.00  (0.650, 0.450)
+       right tray           [ground_truth]   1.00  (0.650, -0.450)
+       Objects in scene: ['red block', 'blue block', 'green block', 'yellow block', 'left tray', 'right tray']
+       Latency         : 0ms
+
+  [3/5] Task Planning
+       Steps generated : 3
+       Step 1: LOCATE 'red block'
+       Step 2: MOVE 'red block' → (0.45, -0.2)
+       Step 3: PICK 'red block'
+
+  [4/5] Execution  [MockRobot]
+
+───────────────────────────────────────────────────────
+  Action Plan — 3 steps
+  Instruction: pick up the red block
+  Task ID:     0fed0429
+───────────────────────────────────────────────────────
+  Step 1: LOCATE 'red block'
+    → Confirm 'red block' in scene at (0.45, -0.2)
+  Step 2: MOVE 'red block' → (0.45, -0.2)
+    → Navigate arm to 'red block'
+  Step 3: PICK 'red block'
+    → Grasp 'red block'
+───────────────────────────────────────────────────────
+
+Executing plan...
+
+  Step 1: LOCATE «red block» Found 'red block' at (0.45, -0.2)
+  Step 2: MOVE «red block» Moved to 'red block' at (0.45, -0.2)
+  Step 3: PICK «red block» 2026-09-11 15:30:16,680 [INFO] PyBullet disconnected.
+Picked up 'red block' at (0.45, -0.2)
+
+  ✓ Plan completed successfully in 1ms
+
+  [5/5] Feedback & Validation
+       ✓ Task completed — 3/3 steps
+
+════════════════════════════════════════════════════════════
+  PIPELINE COMPLETE  ✓  Task ID: 0fed0429
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  Task ID:     0fed0429
+  Instruction: pick up the red block
+  Model:       ollama
+  Status:      COMPLETED
+  Created:     2026-09-11T15:30:16.660704+00:00
+────────────────────────────────────────────────────────────
+  ✓  LLM Instruction Parser              [success]      2ms
+  ✓  Vision Module / Scene Lookup        [success]      0ms
+  ✓  Task Planning Module                [success]      0ms
+  ✓  Execution Module                    [success]        —
+  ✓  Validation & Feedback               [success]        —
+────────────────────────────────────────────────────────────
+
+docker compose run --rm p54 python main.py "pick up the red block"  0.06s user 0.03s system 9% cpu 1.064 total
+ Container p54_ollama Running 
+ Container p54-embodied-multimodal-llm-for-industrial-task-planning-p54-run-e97b88d00c88 Creating 
+ Container p54-embodied-multimodal-llm-for-industrial-task-planning-p54-run-e97b88d00c88 Created 
+Cache enabled: True
+Entries cached: 11
+Cache size: 2.7 KB
+Location: .llm_cache

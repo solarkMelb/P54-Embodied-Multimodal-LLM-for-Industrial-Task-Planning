@@ -217,3 +217,8 @@ capstone/
 simulation_backend/vision/detection_models
 
 llm_cache
+
+# Claude Code
+CLAUDE.md
+.claude/
+

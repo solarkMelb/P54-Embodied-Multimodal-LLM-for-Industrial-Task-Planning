@@ -2,15 +2,15 @@
 comparison_report.py
 --------------------
 Generates the full comparative analysis report across GPT-4o, Gemini,
-and DeepSeek. Combines evaluation results, metrics, and per-case analysis
-into a readable terminal report and a CSV export.
+DeepSeek, and Ollama. Combines evaluation results, metrics, and per-case
+analysis into a readable terminal report and a CSV export.
 
 Run this file directly to execute the full evaluation pipeline:
     python comparison_report.py
-    python -m llm_backend.llm_eval.comparison_report
+    python -m llm_backend.LLM_eval.comparison_report
 
 Or import and call programmatically:
-    from llm_backend.llm_eval.evaluator import import run_comparison_report
+    from llm_backend.LLM_eval.comparison_report import run_comparison_report
 
     run_comparison_report(models=["openai", "gemini"])
 """

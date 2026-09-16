@@ -34,12 +34,14 @@ Hierarchy:
     RobotBase        (this file — abstract)
         └─ FrankaPanda       (robots/Franka_panda.py)
         └─ KukaIIWA          (robots/Kuka_IIWA.py)
-        └─ UniversalRobotUR5 (robots/Universal_Robot_ur5.py)
+    UR5 is not yet implemented as a subclass; ROBOT_MODEL=ur5 falls back to
+    MockRobot (see Simulation._load_robot()).
 
 Selecting a robot at runtime:
-    Instantiate the desired subclass and pass it to Executor.
-    In future, a factory function keyed on ROBOT_MODEL in .env
-    can be added here following the same pattern as get_detector().
+    Simulation._load_robot() in simulation_backend/simulation.py is the
+    factory: it reads ROBOT_MODEL from .env and instantiates the matching
+    subclass, falling back to MockRobot if the real robot fails to load or
+    the value is unset/unknown.
 
 Usage (pipeline):
     from simulation_backend.robots.Franka_panda import FrankaPanda

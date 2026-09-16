@@ -2,7 +2,9 @@
 cache.py
 --------
 Disk-based LLM response cache.
-Caches ParsedInstruction outputs by instruction text.
+Caches ParsedInstruction outputs, keyed by instruction text + backend model +
+system prompt (see _cache_key()) — an instruction parsed under a different
+prompt, such as a multi-action sub-instruction, is a different cache entry.
 On cache hit — returns instantly, zero API/LLM call.
 On cache miss — calls LLM, saves result for next time.
 

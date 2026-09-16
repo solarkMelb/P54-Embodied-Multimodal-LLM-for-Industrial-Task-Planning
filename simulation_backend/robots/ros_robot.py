@@ -2,10 +2,16 @@
 ros_robot.py
 ------------
 ROS2 robot implementation for Swinburne physical robots.
-Replaces MockRobot when ROBOT_BACKEND=ros in .env.
 
 Publishes commands to ROS2 topics and subscribes to feedback.
 Compatible with MoveIt2 action servers used by Swinburne's robot setup.
+
+Not currently wired into the live pipeline: main.py reads ROBOT_BACKEND at
+module level and imports ROSRobot when it is "ros", but that code path
+builds an unused module-level `robot` and is never consulted by
+run_pipeline() or Simulation._load_robot() (which selects the robot via
+ROBOT_MODEL instead). Import and instantiate this class directly until
+that wiring exists.
 """
 import os
 import time

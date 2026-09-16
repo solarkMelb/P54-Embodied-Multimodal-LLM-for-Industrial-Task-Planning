@@ -1,19 +1,31 @@
 """
 task_planner/planner.py
 -----------------------
-PB7 (Sprint 2) + PB7-SP + PB7-MULTI (Sprint 3)
+Rule-based task planner. Combines a ParsedInstruction and the current scene
+into an ordered ActionPlan of RobotCommands.
 
-Sprint 3 additions:
+Capabilities:
+    - Single-action planning: locate → move → pick → move → place, for plain
+      pick/place/move/locate instructions.
     - Spatial relation handling: "left of", "right of", "near", "on top of",
-      "next to" → calculates offset position relative to reference object
-    - Multi-step instruction handling: detects sequential two-action instructions
-      and generates a compound plan (e.g. pick A then move B)
+      "next to", "in front of", "behind" → calculates an offset position
+      relative to a reference object (see TECHNICAL_NOTES.md for the offset
+      table and axis convention).
+    - Multi-action planning (plan_multi_step()): chains several parsed
+      actions into one continuous, sequentially renumbered ActionPlan.
+      Plans each action against a working copy of the scene that is updated
+      after every sub-plan, and tracks gripper state across actions so a
+      pick with no matching place is caught at plan time rather than failing
+      mid-execution.
 
 Usage:
     from task_planner.planner import TaskPlanner
     planner = TaskPlanner()
     plan    = planner.generate_plan(parsed_instruction, scene)
     plan.print_plan()
+
+    # Multi-action:
+    plan = planner.plan_multi_step(parsed_instructions, scene)
 """
 
 import copy

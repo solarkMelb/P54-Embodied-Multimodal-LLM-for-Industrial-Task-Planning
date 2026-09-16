@@ -44,8 +44,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ── Module imports ─────────────────────────────────────────────────────────────
-from llm_backend.custom_LLM_parser import parse_instruction
-from llm_backend.schema            import ParsedInstruction, ConfidenceLevel
+from llm_backend.custom_LLM_parser import parse_instruction, parse_multi_instruction
+from llm_backend.schema            import (
+    ParsedInstruction, MultiActionInstruction, ConfidenceLevel,
+)
 from llm_backend.tracker           import PipelineTracker
 from task_planner.planner          import TaskPlanner
 from simulation_backend.vision.scene_representation import get_current_scene
@@ -143,11 +145,12 @@ def run_pipeline(
         print(SEP)
 
     result = {
-        "success":   False,
-        "task_id":   task_id,
-        "parsed":    None,
-        "plan":      None,
-        "execution": None,
+        "success":    False,
+        "task_id":    task_id,
+        "parsed":     None,
+        "parsed_set": None,
+        "plan":       None,
+        "execution":  None,
     }
 
     # ══ STAGE 1: LLM PARSE ════════════════════════════════════════════════════
@@ -155,32 +158,52 @@ def run_pipeline(
         print(f"\n  [1/5] LLM Parse ({_backend})")
 
     try:
-        t0     = time.perf_counter()
-        parsed = parse_instruction(instruction)
-        lat    = (time.perf_counter() - t0) * 1000
+        t0        = time.perf_counter()
+        # S5-3: one instruction may contain several sequential actions.
+        # parse_multi_instruction() always returns a MultiActionInstruction —
+        # a single-action command simply comes back with one action.
+        parsed_set = parse_multi_instruction(instruction)
+        lat        = (time.perf_counter() - t0) * 1000
 
-        result["parsed"] = parsed
+        parsed = parsed_set.primary          # back-compat for single-action code
+        result["parsed"]     = parsed
+        result["parsed_set"] = parsed_set
 
         tracker.record(
             task_id, "llm_parse", status="success",
-            payload=parsed.model_dump(mode="json"),
+            payload={
+                "is_multi_action": parsed_set.is_multi_action,
+                "action_count":    parsed_set.action_count,
+                "segments":        parsed_set.segments,
+                "actions":         [a.model_dump(mode="json") for a in parsed_set.actions],
+            },
             latency_ms=lat,
         )
 
         if verbose:
-            print(f"       Action      : {parsed.action.value}")
-            print(f"       Object      : {parsed.object_target}")
-            print(f"       Destination : {parsed.destination or '—'}")
-            print(f"       Spatial     : {parsed.spatial_relation or '—'}")
-            print(f"       Confidence  : {parsed.confidence.value}")
+            if parsed_set.is_multi_action:
+                print(f"       Multi-action: YES — {parsed_set.action_count} actions")
+                for i, a in enumerate(parsed_set.actions, 1):
+                    print(f"         {i}. {a.action.value:<7} "
+                          f"object='{a.object_target}' "
+                          f"dest='{a.destination or '—'}' "
+                          f"spatial='{a.spatial_relation or '—'}' "
+                          f"({a.confidence.value})")
+            else:
+                print(f"       Action      : {parsed.action.value}")
+                print(f"       Object      : {parsed.object_target}")
+                print(f"       Destination : {parsed.destination or '—'}")
+                print(f"       Spatial     : {parsed.spatial_relation or '—'}")
+                print(f"       Confidence  : {parsed.confidence.value}")
             print(f"       Latency     : {lat:.0f}ms")
 
-        if parsed.confidence == ConfidenceLevel.LOW:
+        if parsed_set.confidence == ConfidenceLevel.LOW:
             if verbose:
                 print(f"\n  ⚠  Low confidence — instruction may be ambiguous")
-                print(f"     Notes: {parsed.notes}")
+                print(f"     Notes: {parsed_set.notes or parsed.notes}")
             tracker.record(task_id, "feedback", status="retry",
-                           payload={"reason": "low_confidence", "notes": parsed.notes})
+                           payload={"reason": "low_confidence",
+                                    "notes": parsed_set.notes or parsed.notes})
             result["success"] = False
             tracker.complete_task(task_id, success=False)
             return result
@@ -253,7 +276,12 @@ def run_pipeline(
     try:
         planner = TaskPlanner()
         t0      = time.perf_counter()
-        plan    = planner.generate_plan(parsed, scene, task_id=task_id)
+        # S5-3: route multi-action instructions through plan_multi_step() so
+        # every action is planned, in order, into one continuous ActionPlan.
+        if parsed_set.is_multi_action:
+            plan = planner.plan_multi_step(parsed_set.actions, scene, task_id=task_id)
+        else:
+            plan = planner.generate_plan(parsed, scene, task_id=task_id)
         lat     = (time.perf_counter() - t0) * 1000
 
         result["plan"] = plan
@@ -261,12 +289,16 @@ def run_pipeline(
         tracker.record(
             task_id, "task_plan", status="success",
             payload={
-                "steps":    plan.total_steps,
-                "commands": [c.command_type.value for c in plan.commands],
+                "steps":        plan.total_steps,
+                "commands":     [c.command_type.value for c in plan.commands],
+                "action_count": parsed_set.action_count,
+                "multi_action": parsed_set.is_multi_action,
             },
             latency_ms=lat,
         )
         if verbose:
+            if parsed_set.is_multi_action:
+                print(f"       Actions planned : {parsed_set.action_count}")
             print(f"       Steps generated : {plan.total_steps}")
             for cmd in plan.commands:
                 print(f"       {cmd.summary()}")
@@ -441,6 +473,218 @@ def _show_detection_window(sim) -> None:
         logger.warning(f"[detection window] Could not display: {e}")
 
 
+# ── GUI presentation (S5-3 demo) ───────────────────────────────────────────────
+
+def _style_gui(sim) -> None:
+    """
+    Turn the PyBullet debug window into something presentable.
+
+    PyBullet's GUI mode opens its ExampleBrowser: side panels, a Params pane and
+    three synthetic-camera preview boxes (RGB, depth, segmentation). They are
+    useful while debugging the vision module and only clutter a demo of the
+    task pipeline, so they are switched off here and the camera is framed on
+    the workspace instead of the default far-away view.
+
+    GUI mode only. Every call is guarded — a visualiser that refuses a setting
+    must never take the pipeline down with it.
+    """
+    import pybullet as p
+
+    def _try(fn):
+        """Apply one visual setting; ignore it if this build refuses it."""
+        try:
+            fn()
+        except Exception as e:
+            logger.debug(f"[gui] setting skipped: {e}")
+
+    try:
+        c = sim.client
+
+        # Panels and synthetic-camera previews off.
+        for flag in (p.COV_ENABLE_GUI,
+                     p.COV_ENABLE_RGB_BUFFER_PREVIEW,
+                     p.COV_ENABLE_DEPTH_BUFFER_PREVIEW,
+                     p.COV_ENABLE_SEGMENTATION_MARK_PREVIEW):
+            _try(lambda f=flag: p.configureDebugVisualizer(f, 0, physicsClientId=c))
+
+        # Depth cues: shadows are what stop the scene reading as a flat diagram.
+        _try(lambda: p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 1, physicsClientId=c))
+        _try(lambda: p.configureDebugVisualizer(
+            lightPosition=[2.6, -2.2, 3.4], physicsClientId=c))
+        _try(lambda: p.configureDebugVisualizer(
+            shadowMapResolution=4096, shadowMapWorldSize=4,
+            shadowMapIntensity=0.75, physicsClientId=c))
+
+        # ── Palette ───────────────────────────────────────────────────────
+        # A dark studio set. The workspace objects are the data the viewer has
+        # to read, so everything that is not an object — backdrop, floor, table,
+        # walls — is pushed down in value until the coloured blocks are the
+        # brightest thing in the frame.
+        # Value ladder, darkest to lightest. Each element has to separate from
+        # the one behind it, or the silhouette disappears — the table read as
+        # invisible when it sat too close in value to the floor under it.
+        #   backdrop  <  floor  <  table  <  trays  <  blocks
+        BACKDROP   = [0.095, 0.105, 0.135]          # darkest: recedes completely
+        FLOOR      = [0.185, 0.200, 0.235]          # dark, but reads as a surface
+        TABLE_TOP  = [0.520, 0.395, 0.270, 1.0]     # warm wood, clearly above the floor
+        TRAY_BODY  = [0.740, 0.760, 0.800, 1.0]     # cool light grey: separates by hue too
+        WALL_GLASS = [0.55, 0.68, 0.85, 0.07]       # a hint of an edge, nothing more
+        WORKSTN    = [0.30, 0.32, 0.37, 0.35]       # translucent: stops hiding the red block
+
+        _try(lambda: p.configureDebugVisualizer(
+            rgbBackground=BACKDROP, physicsClientId=c))
+
+        # Shadows carry the depth, but on a dark set a heavy shadow turns to
+        # mud — keep them soft.
+        _try(lambda: p.configureDebugVisualizer(
+            shadowMapResolution=4096, shadowMapWorldSize=4,
+            shadowMapIntensity=0.45, physicsClientId=c))
+
+        def _close(a, b, tol=0.06):
+            return all(abs(x - y) <= tol for x, y in zip(a[:3], b[:3]))
+
+        WOOD_CFG = (0.76, 0.60, 0.42)               # table colour in scene_config.yaml
+
+        for body in range(p.getNumBodies(physicsClientId=c)):
+            try:
+                uid  = p.getBodyUniqueId(body, physicsClientId=c)
+                name = p.getBodyInfo(uid, physicsClientId=c)[1].decode(errors="replace").lower()
+                shapes = p.getVisualShapeData(uid, physicsClientId=c)
+            except Exception:
+                continue
+
+            # plane.urdf ships a checkerboard texture that tiles into the
+            # distance and reads as a flat diagram. Strip it, keep the floor.
+            if "plane" in name or "floor" in name:
+                _try(lambda i=uid: p.changeVisualShape(
+                    i, -1, textureUniqueId=-1, rgbaColor=FLOOR + [1.0],
+                    physicsClientId=c))
+                continue
+
+            for shape in shapes:
+                rgba = shape[7]
+                link = shape[1]
+                if 0.3 <= rgba[3] < 0.95:            # the perimeter walls
+                    _try(lambda i=uid, l=link: p.changeVisualShape(
+                        i, l, rgbaColor=WALL_GLASS, physicsClientId=c))
+                elif _close(rgba, WOOD_CFG):         # the table
+                    _try(lambda i=uid, l=link: p.changeVisualShape(
+                        i, l, rgbaColor=TABLE_TOP, physicsClientId=c))
+
+        try:
+            for entry in sim.registry.all_entries():
+                low = entry.label.lower()
+                # The workstation sits dead centre and hides the red block.
+                if "workstation" in low:
+                    _try(lambda i=entry.body_id: p.changeVisualShape(
+                        i, -1, rgbaColor=WORKSTN, physicsClientId=c))
+                # Trays are the drop-off targets, so they have to read against
+                # the warm table — cool and light does both jobs at once.
+                elif "tray" in low:
+                    _try(lambda i=entry.body_id: p.changeVisualShape(
+                        i, -1, rgbaColor=TRAY_BODY, physicsClientId=c))
+        except Exception:
+            pass
+
+        p.resetDebugVisualizerCamera(
+            cameraDistance=float(os.getenv("GUI_CAM_DISTANCE", "0.95")),
+            cameraYaw=float(os.getenv("GUI_CAM_YAW", "84")),
+            cameraPitch=float(os.getenv("GUI_CAM_PITCH", "-27")),
+            cameraTargetPosition=[0.45, 0.0, 0.10],
+            physicsClientId=c,
+        )
+    except Exception as e:
+        logger.debug(f"[gui] Could not style the visualiser: {e}")
+
+
+def _label_objects(sim, previous: list | None = None, focus: set | None = None) -> list:
+    """
+    Name the objects the viewer actually needs to read.
+
+    Labelling all seven objects at once produces noise, not information: the
+    labels collide, and nothing tells the eye which objects the instruction is
+    about. Only the objects named in the instruction are labelled, and each
+    label is tinted to its object so the association is immediate.
+
+    Args:
+        sim:      Simulation instance.
+        previous: Label ids from an earlier call, replaced in place.
+        focus:    Object labels to show. None shows every block and tray.
+
+    Returns:
+        The list of debug-text ids, to pass back on the next refresh.
+    """
+    import pybullet as p
+
+    # Bright tints: on a dark set, a label has to out-value the surface it
+    # floats over, and each one carries its object's hue so the eye pairs them
+    # before it reads the word.
+    TINT = {
+        "red block":    [1.00, 0.46, 0.42],
+        "blue block":   [0.48, 0.70, 1.00],
+        "green block":  [0.42, 0.93, 0.53],
+        "yellow block": [1.00, 0.84, 0.36],
+    }
+    TRAY = [0.74, 0.78, 0.84]
+
+    ids: list = []
+    previous = previous or []
+    try:
+        for entry in sim.registry.all_entries():
+            label = entry.label
+            low   = label.lower()
+            if "workstation" in low:          # never named in an instruction
+                continue
+            if focus and low not in focus:
+                continue
+
+            pos, _ = p.getBasePositionAndOrientation(entry.body_id, physicsClientId=sim.client)
+            if "tray" in low:
+                dx, dy, dz, colour, size = 0.0, -0.17, 0.02, TRAY, 0.95
+            else:
+                dx, dy, dz, colour, size = 0.0, 0.0, 0.15, TINT.get(low, [0.90, 0.92, 0.95]), 1.05
+
+            kwargs = dict(textColorRGB=colour, textSize=size, physicsClientId=sim.client)
+            if len(ids) < len(previous):
+                kwargs["replaceItemUniqueId"] = previous[len(ids)]
+            ids.append(p.addUserDebugText(
+                label, [pos[0] + dx, pos[1] + dy, pos[2] + dz], **kwargs))
+
+        # Clear any labels left over from a longer previous set.
+        for stale in previous[len(ids):]:
+            try:
+                p.removeUserDebugItem(stale, physicsClientId=sim.client)
+            except Exception:
+                pass
+    except Exception as e:
+        logger.debug(f"[gui] Could not draw object labels: {e}")
+    return ids
+
+
+def _banner(sim, lines: list[tuple[str, float, list]], previous: list | None = None) -> list:
+    """
+    Draw the caption block above the workspace.
+
+    Each entry is (text, size, colour) so the three lines carry a hierarchy —
+    title, instruction, outcome — instead of reading as one flat block.
+    """
+    import pybullet as p
+
+    ids: list = []
+    previous = previous or []
+    try:
+        z = 0.52
+        for i, (text, size, colour) in enumerate(lines):
+            kwargs = dict(textColorRGB=colour, textSize=size, physicsClientId=sim.client)
+            if i < len(previous):
+                kwargs["replaceItemUniqueId"] = previous[i]
+            ids.append(p.addUserDebugText(text, [0.02, 0.30, z], **kwargs))
+            z -= 0.055 + 0.022 * size
+    except Exception as e:
+        logger.debug(f"[gui] Could not draw banner: {e}")
+    return ids
+
+
 def _hold_simulation_open(sim) -> None:
     """
     Keep the PyBullet GUI window open after the pipeline completes.
@@ -475,11 +719,30 @@ def _hold_simulation_open(sim) -> None:
 
     try:
         while not quit_flag.is_set():
-            p.stepSimulation(physicsClientId=sim.client)
+            try:
+                p.stepSimulation(physicsClientId=sim.client)
+            except p.error:
+                # The user closed the PyBullet window instead of typing Q.
+                # The physics server is gone, so stop stepping and exit
+                # cleanly rather than raising a traceback after a run that
+                # already completed successfully.
+                print("  PyBullet window closed.")
+                break
             _time.sleep(1.0 / 240.0)
     except KeyboardInterrupt:
         pass
     finally:
+        # Print the camera the user ended on, so a view found by dragging with
+        # the mouse can be pinned in .env and reproduced on the next run.
+        try:
+            cam  = p.getDebugVisualizerCamera(physicsClientId=sim.client)
+            yaw, pitch, dist = cam[8], cam[9], cam[10]
+            print(f"\n  Camera position for this view — paste into .env to keep it:")
+            print(f"    GUI_CAM_DISTANCE={dist:.2f}")
+            print(f"    GUI_CAM_YAW={yaw:.0f}")
+            print(f"    GUI_CAM_PITCH={pitch:.0f}\n")
+        except Exception:
+            pass
         print("  Closing simulation.")
 
 
@@ -561,6 +824,13 @@ if __name__ == "__main__":
             from simulation_backend.simulation import Simulation
             sim = Simulation()
             print(f"  Simulation started — {len(sim.registry)} objects loaded.")
+            if os.getenv("SIMULATION_MODE", "DIRECT").upper() == "GUI":
+                _style_gui(sim)
+                sim._demo_labels = _label_objects(sim)
+                sim._demo_banner = _banner(sim, [
+                    ("P54   Multi-action command support", 1.45, [0.95, 0.96, 0.98]),
+                    ("Natural language  ->  vision  ->  planner  ->  KUKA", 0.95, [0.60, 0.65, 0.73]),
+                ])
         except Exception as e:
             print(f"  ✗ Failed to start simulation: {e}")
             print("  Real vision will be retried during Stage 2; no static scene will be used.")
@@ -570,10 +840,41 @@ if __name__ == "__main__":
         if args.interactive:
             run_interactive(sim=sim)
         elif args.instruction:
-            run_pipeline(args.instruction, verbose=not args.quiet, sim=sim)
-            # After single-instruction pipeline, keep PyBullet open in GUI mode
-            # so the user can inspect the result. Exit only when Q is pressed.
-            if sim is not None and os.getenv("SIMULATION_MODE", "DIRECT").upper() == "GUI":
+            gui = sim is not None and os.getenv("SIMULATION_MODE", "DIRECT").upper() == "GUI"
+            if gui:
+                shown = args.instruction if len(args.instruction) <= 58 \
+                    else args.instruction[:55].rstrip() + "..."
+                sim._demo_banner = _banner(sim, [
+                    ("P54   Multi-action command support", 1.45, [0.95, 0.96, 0.98]),
+                    (f'"{shown}"', 1.0, [0.66, 0.71, 0.78]),
+                    ("running...", 1.05, [0.60, 0.65, 0.73]),
+                ], getattr(sim, "_demo_banner", None))
+
+            res = run_pipeline(args.instruction, verbose=not args.quiet, sim=sim)
+
+            # After a single-instruction run, keep PyBullet open in GUI mode so
+            # the result can be inspected and screenshotted. Refresh the labels
+            # first so every block is named where it actually ended up.
+            if gui:
+                plan = res.get("plan")
+                parsed_set = res.get("parsed_set")
+                actions = getattr(parsed_set, "action_count", 1)
+                steps = getattr(plan, "total_steps", 0)
+                status = "COMPLETE" if res.get("success") else "FAILED"
+                # Label only what the instruction actually touched, so the
+                # final frame points at the result instead of naming everything.
+                focus = set()
+                for cmd in getattr(plan, "commands", []) or []:
+                    if cmd.target_object:
+                        focus.add(cmd.target_object.lower())
+                sim._demo_labels = _label_objects(
+                    sim, getattr(sim, "_demo_labels", None), focus=focus or None)
+                sim._demo_banner = _banner(sim, [
+                    ("P54   Multi-action command support", 1.45, [0.95, 0.96, 0.98]),
+                    (f'"{shown}"', 1.0, [0.66, 0.71, 0.78]),
+                    (f"{actions} actions   {steps} steps   {status}", 1.25,
+                     [0.36, 0.94, 0.56] if res.get("success") else [1.00, 0.45, 0.40]),
+                ], getattr(sim, "_demo_banner", None))
                 _hold_simulation_open(sim)
         else:
             ap.print_help()

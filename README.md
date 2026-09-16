@@ -61,7 +61,7 @@ P54-Embodied-Multimodal-LLM-for-Industrial-Task-Planning/
 │       ├── openai_backend.py            ← GPT-4o via OpenAI API
 │       ├── gemini_backend.py            ← Gemini via Google API
 │       ├── deepseek_backend.py          ← DeepSeek via OpenAI-compatible API
-│       └── huggingface_backend.py       ← Local HuggingFace models (no API key)
+│       └── ollama_backend.py            ← Local Ollama models (no API key)
 │
 ├── llm_backend/LLM_eval/                ← Multi-model evaluation
 │   ├── comparison_report.py             ← Full evaluation report runner
@@ -159,7 +159,7 @@ cp .env.example .env
 Edit `.env` and fill in the values you need. Only the vars for your chosen `LLM_BACKEND` are required:
 ```
 # Controls which LLM the pipeline uses
-LLM_BACKEND=openai      # openai | gemini | deepseek | huggingface
+LLM_BACKEND=openai      # openai | gemini | deepseek | ollama
 
 # OpenAI (GPT-4o)
 OPENAI_API_KEY=sk-your-key-here
@@ -173,8 +173,10 @@ GEMINI_MODEL=gemini-2.5-flash-lite
 DEEPSEEK_API_KEY=your-key-here
 DEEPSEEK_MODEL=deepseek-chat
 
-# HuggingFace — runs a local model, no API key or internet needed after first download
-HF_MODEL=Qwen/Qwen2.5-7B-Instruct
+# Ollama — runs a local model, no API key. Requires the Ollama app running
+# (ollama.com) and the model pulled once: `ollama pull qwen2.5:7b`
+OLLAMA_MODEL=qwen2.5:7b
+OLLAMA_BASE_URL=http://localhost:11434
 
 # Vision / simulation / robot (see .env.example for the full list)
 USE_LIVE_SIMULATION=true       # false falls back to a static JSON scene in drafts/
@@ -317,7 +319,7 @@ python comparison_report.py
 ## Pipeline Stages
 
 ### Stage 1 — LLM Parse (`llm_backend/custom_LLM_parser.py`)
-Sends the instruction to GPT-4o / Gemini / DeepSeek / a local HuggingFace model (selected via `LLM_BACKEND`) with a structured system prompt and 6 few-shot examples. Returns `ParsedInstruction` with action, object, destination, spatial relation, and confidence. Handles empty, vague, and synonym edge cases before calling the model.
+Sends the instruction to GPT-4o / Gemini / DeepSeek / a local Ollama model (selected via `LLM_BACKEND`) with a structured system prompt and 6 few-shot examples. Returns `ParsedInstruction` with action, object, destination, spatial relation, and confidence. Handles empty, vague, and synonym edge cases before calling the model.
 
 ### Stage 2 — Vision Lookup (`simulation_backend/vision/scene_representation.py`)
 `get_current_scene()` captures the live PyBullet workspace through `simulation_backend/simulation.py`. Detection priority per object: primary detector (YOLO or colour threshold, if `VISION_DETECTOR` is set) first, then ground truth (exact PyBullet positions) as fallback for anything the detector missed. Fails fast with a `RuntimeError` if any object registered in the workspace is missing from the detected scene. If `USE_LIVE_SIMULATION=false`, falls back to a static JSON scene in `drafts/` instead.

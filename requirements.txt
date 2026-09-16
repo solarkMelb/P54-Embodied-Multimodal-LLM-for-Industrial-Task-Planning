@@ -1,18 +1,13 @@
 # LLM Backend
 openai>=1.0.0
-langchain>=0.1.0
-langchain-openai>=0.0.5
-langchain-google-genai>=0.0.5
-langchain-deepseek>=0.1.0 
+langchain>=0.2.0
+langchain-openai>=0.1.0
+langchain-google-genai>=1.0.0
+langchain-deepseek>=0.1.0
 langchain-core>=0.2.0
+langchain-ollama>=0.1.0
 
-#Hugginface local LLM
-langchain-huggingface>=0.1.0
-transformers>=4.40.0
-accelerate>=0.30.0
-bitsandbytes>=0.43.0		# 4-bit quantization (optional, GPU only)
-
-#Note: Torch is a dependency of transformers, so you might need to uninstall the existing version and install the compatible one
+#Note: Torch is a dependency of ultralytics (YOLO), so you might need to uninstall the existing version and install the compatible one
 #       pip uninstall torch torchvision torchaudio -y
 #
 #   CUDA 12.1 (most common):
@@ -43,16 +38,3 @@ pydantic>=2.0.0
 
 # Testing
 pytest>=7.4.0
-
-openai>=1.0.0
-langchain>=0.2.0
-langchain-openai>=0.1.0
-langchain-core>=0.2.0
-langchain-google-genai>=1.0.0
-pydantic>=2.0.0
-python-dotenv>=1.0.0
-pytest>=7.0.0
-opencv-python-headless
-numpy
-ultralytics
-langchain-ollama>=0.1.0langchain-ollama>=0.1.0

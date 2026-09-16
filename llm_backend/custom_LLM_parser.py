@@ -9,11 +9,11 @@ Backend is selected at runtime via the LLM_BACKEND environment variable:
     LLM_BACKEND=openai    (default) -- uses OpenAI GPT-4o
     LLM_BACKEND=gemini               -- uses Google Gemini
     LLM_BACKEND=deepseek             -- uses DeepSeek
-    LLM_BACKEND=huggingface          -- uses local HuggingFace model
+    LLM_BACKEND=ollama               -- uses a local Ollama model, no API key
 
 All API credentials and model config are owned entirely by the backend
 modules (backends/openai_backend.py, backends/gemini_backend.py,
-backends/deepseek_backend.py, backends/huggingface_backend.py). 
+backends/deepseek_backend.py, backends/ollama_backend.py).
 This file contains zero credential logic.
 
 Full pipeline per call:

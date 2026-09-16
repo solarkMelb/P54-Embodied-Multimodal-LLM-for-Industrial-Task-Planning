@@ -77,7 +77,15 @@
 
 FROM python:3.11-slim
 
-RUN apt-get update && apt-get install -y curl \
+# libgl1/libglib2.0-0 and the libx* stubs are required by opencv-python —
+# without them `import cv2` fails with "libGL.so.1: cannot open shared object file".
+RUN apt-get update && apt-get install -y \
+    curl \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

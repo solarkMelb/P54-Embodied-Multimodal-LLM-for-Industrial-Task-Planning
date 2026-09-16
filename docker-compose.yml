@@ -2,8 +2,10 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: p54_ollama
-    ports:
-      - "11434:11434"
+    # No host port mapping: the p54 service reaches Ollama over the compose
+    # network, and publishing 11434 collides with a natively installed Ollama.
+    expose:
+      - "11434"
     volumes:
       - ollama_models:/root/.ollama
     restart: unless-stopped
@@ -12,14 +14,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    platform: linux/arm64
     container_name: p54_pipeline
     env_file:
       - .env
+    # These override .env: the container is headless and has no CUDA runtime,
+    # so a host .env set to GUI/cuda still works for native runs.
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
       - LLM_BACKEND=ollama
       - ROBOT_BACKEND=mock
+      - SIMULATION_MODE=DIRECT
+      - YOLO_DEVICE=cpu
+      # No X display in the container; without this the cv2 detection popup
+      # aborts with "could not load the Qt platform plugin xcb".
+      - QT_QPA_PLATFORM=offscreen
     volumes:
       - .:/app
     depends_on:

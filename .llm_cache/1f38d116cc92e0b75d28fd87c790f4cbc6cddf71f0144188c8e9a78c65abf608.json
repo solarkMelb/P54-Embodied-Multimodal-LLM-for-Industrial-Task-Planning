@@ -1,9 +1,0 @@
-{
-  "action": "pick",
-  "object_target": "red block",
-  "destination": "left tray",
-  "spatial_relation": "in",
-  "confidence": "high",
-  "raw_instruction": "pick up the red block and place it in the left tray",
-  "notes": null
-}

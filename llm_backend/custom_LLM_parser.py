@@ -117,10 +117,11 @@ def parse_instruction(
 
     instruction = normalise_instruction(instruction)
     model = os.getenv("LLM_BACKEND", "openai")
+    effective_prompt = system_prompt_override or system_prompt
 
     # ── Cache check ──────────────────────────────────────────────────────────
     from llm_backend.cache import get_cached, save_cache
-    cached = get_cached(instruction, model)
+    cached = get_cached(instruction, model, effective_prompt)
     if cached:
         logger.info(f"[Cache] Returning cached result for: '{instruction}'")
         return ParsedInstruction(**cached)
@@ -132,7 +133,7 @@ def parse_instruction(
     for attempt in range(1, max_retries + 1):
         try:
             messages = [
-                SystemMessage(content=system_prompt_override or system_prompt),
+                SystemMessage(content=effective_prompt),
                 HumanMessage(content=f"Instruction: {instruction}"),
             ]
             response = _get_llm().invoke(messages)
@@ -147,7 +148,7 @@ def parse_instruction(
             result = validate_parsed_result(result)
 
             # ── Save to cache ─────────────────────────────────────────────
-            save_cache(instruction, model, result.model_dump(mode="json"))
+            save_cache(instruction, model, result.model_dump(mode="json"), effective_prompt)
 
             logger.info(f"Parsed successfully on attempt {attempt}: {result}")
             return result

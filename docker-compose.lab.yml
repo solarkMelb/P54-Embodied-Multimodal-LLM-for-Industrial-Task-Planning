@@ -17,10 +17,15 @@ services:
     env_file:
       - .env
     environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
+      # localhost, not the compose service name: network_mode below puts this
+      # container on the host's network stack, where compose DNS does not
+      # resolve "ollama". The ollama service publishes 11434 to the host, so
+      # localhost reaches it.
+      - OLLAMA_BASE_URL=http://localhost:11434
       - LLM_BACKEND=ollama
       - ROBOT_BACKEND=ros
       - ROS_DOMAIN_ID=0
+    # Required for ROS2 DDS peer discovery to reach the robot on the lab LAN.
     network_mode: host
     volumes:
       - .:/app

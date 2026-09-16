@@ -1,9 +1,0 @@
-{
-  "action": "locate",
-  "object_target": "yellow block",
-  "destination": null,
-  "spatial_relation": null,
-  "confidence": "high",
-  "raw_instruction": "locate the yellow block",
-  "notes": null
-}

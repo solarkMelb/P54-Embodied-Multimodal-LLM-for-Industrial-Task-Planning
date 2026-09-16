@@ -1,9 +1,0 @@
-{
-  "action": "pick",
-  "object_target": "green block",
-  "destination": "left tray",
-  "spatial_relation": "in",
-  "confidence": "high",
-  "raw_instruction": "grab the green block and drop it in the left tray",
-  "notes": "Mapped 'grab' to 'pick' and 'drop' to 'place' as closest valid actions."
-}

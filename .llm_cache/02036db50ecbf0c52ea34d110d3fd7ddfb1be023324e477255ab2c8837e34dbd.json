@@ -1,9 +1,0 @@
-{
-  "action": "move",
-  "object_target": "red block",
-  "destination": "green block",
-  "spatial_relation": "near",
-  "confidence": "high",
-  "raw_instruction": "move the red block near the green block",
-  "notes": null
-}

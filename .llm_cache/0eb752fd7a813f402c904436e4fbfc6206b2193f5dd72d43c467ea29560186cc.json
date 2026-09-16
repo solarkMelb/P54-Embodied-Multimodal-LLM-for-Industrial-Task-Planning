@@ -1,9 +1,0 @@
-{
-  "action": "place",
-  "object_target": "red block",
-  "destination": "blue block",
-  "spatial_relation": "right of",
-  "confidence": "high",
-  "raw_instruction": "place the red block to the right of the blue block",
-  "notes": null
-}

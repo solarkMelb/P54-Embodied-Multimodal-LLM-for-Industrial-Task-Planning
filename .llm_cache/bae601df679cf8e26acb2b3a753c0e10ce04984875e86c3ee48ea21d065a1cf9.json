@@ -1,9 +1,0 @@
-{
-  "action": "place",
-  "object_target": "unknown",
-  "destination": "unknown",
-  "spatial_relation": null,
-  "confidence": "low",
-  "raw_instruction": "put that thing over there",
-  "notes": "Instruction is too vague. Object and destination are not specified. Object target could not be determined from instruction. Destination could not be determined from instruction."
-}

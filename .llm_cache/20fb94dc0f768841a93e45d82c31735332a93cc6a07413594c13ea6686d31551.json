@@ -1,9 +1,0 @@
-{
-  "action": "move",
-  "object_target": "blue block",
-  "destination": "workstation",
-  "spatial_relation": "near",
-  "confidence": "high",
-  "raw_instruction": "move the blue block near the workstation",
-  "notes": null
-}

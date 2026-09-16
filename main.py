@@ -19,9 +19,6 @@ Usage:
     # Single instruction (real vision)
     python main.py "pick up the red block and place it in the left tray"
 
-    # Single instruction (explicit live simulation)
-    USE_LIVE_SIMULATION=true python main.py "pick up the red block"
-
     # Interactive mode
     python main.py --interactive
 
@@ -64,7 +61,6 @@ SEP = "═" * 60
 
 # ── Real vision defaults ──────────────────────────────────────────────────────
 os.environ.setdefault("VISION_DETECTOR", "yolo")
-_USE_LIVE = os.getenv("USE_LIVE_SIMULATION", "true").strip().lower() == "true"
 
 
 def _get_scene_and_robot(sim=None, verbose: bool = True):
@@ -249,7 +245,7 @@ def run_pipeline(
         # Show detection bounding boxes — DIRECT + live simulation mode only.
         # GUI mode already has PyBullet's own 3D window; skip the popup there
         # so only one window appears instead of two.
-        if _USE_LIVE and sim is not None and os.getenv("SIMULATION_MODE", "DIRECT").upper() != "GUI":
+        if sim is not None and os.getenv("SIMULATION_MODE", "DIRECT").upper() != "GUI":
             _show_detection_window(sim)
 
     except FileNotFoundError as e:
@@ -375,7 +371,6 @@ def _show_detection_window(sim) -> None:
     Capture one camera frame and display it with detection bounding boxes.
 
     Called at the end of Stage 2 (Vision Lookup) when:
-        - USE_LIVE_SIMULATION=true
         - SIMULATION_MODE=DIRECT (skipped in GUI mode, which already has
           PyBullet's own 3D window — avoids showing two windows at once)
 
@@ -808,18 +803,10 @@ if __name__ == "__main__":
     ap.add_argument("instruction", nargs="?", help="Instruction to execute")
     ap.add_argument("--interactive", "-i", action="store_true", help="Interactive mode")
     ap.add_argument("--quiet",       "-q", action="store_true", help="Suppress verbose output")
-    ap.add_argument("--live",        "-l", action="store_true",
-                    help="Force live simulation (overrides USE_LIVE_SIMULATION env var)")
     args = ap.parse_args()
 
-    # --live flag overrides the env var
-    if args.live:
-        os.environ["USE_LIVE_SIMULATION"] = "true"
-        _USE_LIVE = True  # noqa: F811
-
-    # Start simulation if live mode is requested
     sim = None
-    if _USE_LIVE and (args.interactive or args.instruction):
+    if args.interactive or args.instruction:
         try:
             from simulation_backend.simulation import Simulation
             sim = Simulation()

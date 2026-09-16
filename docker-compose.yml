@@ -25,9 +25,6 @@ services:
       - ROBOT_BACKEND=mock
       - SIMULATION_MODE=DIRECT
       - YOLO_DEVICE=cpu
-      # No X display in the container; without this the cv2 detection popup
-      # aborts with "could not load the Qt platform plugin xcb".
-      - QT_QPA_PLATFORM=offscreen
     volumes:
       - .:/app
     depends_on:

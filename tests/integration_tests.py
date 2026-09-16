@@ -77,7 +77,7 @@ def _run(instruction_obj, scene_dict) -> tuple[ActionPlan, bool, MockRobot]:
 
 class TestSpatialRelationPlanning:
 
-    def test_left_of_applies_negative_x_offset(self, scene):
+    def test_left_of_applies_positive_y_offset(self, scene):
         parsed = ParsedInstruction(
             action=ActionType.PLACE,
             object_target="red block",
@@ -88,16 +88,17 @@ class TestSpatialRelationPlanning:
         )
         planner = TaskPlanner()
         plan    = planner.generate_plan(parsed, scene)
-        # blue block at (3.0, 2.0); "left of" offset = (-1.5, 0) → (1.5, 2.0)
+        # blue block at (3.0, 2.0); "left of" offset = (0, +0.15) → (3.0, 2.15).
+        # Left is +Y in this workspace: 'left tray' is at y=+0.45.
         # Step 4 is the MOVE to destination — check its target_position
         step4 = next((c for c in plan.commands if c.step == 4), None)
         assert step4 is not None
         assert step4.command_type == CommandType.MOVE
         assert step4.target_position is not None
-        assert step4.target_position.x == pytest.approx(1.5, abs=0.01)
-        assert step4.target_position.y == pytest.approx(2.0, abs=0.01)
+        assert step4.target_position.x == pytest.approx(3.0, abs=0.01)
+        assert step4.target_position.y == pytest.approx(2.15, abs=0.01)
 
-    def test_right_of_applies_positive_x_offset(self, scene):
+    def test_right_of_applies_negative_y_offset(self, scene):
         parsed = ParsedInstruction(
             action=ActionType.PLACE,
             object_target="red block",
@@ -108,10 +109,14 @@ class TestSpatialRelationPlanning:
         )
         planner = TaskPlanner()
         plan    = planner.generate_plan(parsed, scene)
-        move_to_dest = [c for c in plan.commands if c.command_type == CommandType.MOVE
-                        and c.target_position and c.target_position.x > 3.0]
-        assert len(move_to_dest) > 0
-        assert move_to_dest[0].target_position.x == pytest.approx(4.5, abs=0.1)
+        # blue block at (3.0, 2.0); "right of" offset = (0, -0.15) → (3.0, 1.85).
+        # Step 4 is the MOVE to the destination, after LOCATE/MOVE/PICK.
+        step4 = next((c for c in plan.commands if c.step == 4), None)
+        assert step4 is not None
+        assert step4.command_type == CommandType.MOVE
+        assert step4.target_position is not None
+        assert step4.target_position.x == pytest.approx(3.0, abs=0.01)
+        assert step4.target_position.y == pytest.approx(1.85, abs=0.01)
 
     def test_near_applies_diagonal_offset(self, scene):
         parsed = ParsedInstruction(
@@ -129,14 +134,14 @@ class TestSpatialRelationPlanning:
     def test_spatial_offset_calculation_left(self):
         ref = (3.0, 2.0)
         result = _apply_spatial_offset(ref, "left of")
-        assert result[0] < ref[0]
-        assert result == pytest.approx((1.5, 2.0), abs=0.01)
+        assert result[1] > ref[1]
+        assert result == pytest.approx((3.0, 2.15), abs=0.01)
 
     def test_spatial_offset_calculation_right(self):
         ref = (3.0, 2.0)
         result = _apply_spatial_offset(ref, "right of")
-        assert result[0] > ref[0]
-        assert result == pytest.approx((4.5, 2.0), abs=0.01)
+        assert result[1] < ref[1]
+        assert result == pytest.approx((3.0, 1.85), abs=0.01)
 
     def test_spatial_offset_none_returns_original(self):
         ref    = (3.0, 2.0)

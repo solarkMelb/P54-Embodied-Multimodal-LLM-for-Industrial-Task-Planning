@@ -40,7 +40,6 @@ Usage (from main.py):
     sim.disconnect()
 
 Environment variables:
-    USE_LIVE_SIMULATION=true    enable this class (false -> JSON fallback)
     VISION_DETECTOR=yolo        activate YOLOv8 detector
     VISION_DETECTOR=colour      activate colour HSV detector
     SIMULATION_MODE=DIRECT      DIRECT (headless) or GUI (visual window)

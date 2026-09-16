@@ -90,7 +90,13 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Swap in the headless OpenCV build: the container has no display, and the
+# GUI build's bundled Qt ships only the xcb plugin, so the Stage 2 detection
+# popup aborts the process. Headless makes that call raise a normal cv2.error
+# which main.py already catches and logs.
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip uninstall -y opencv-python \
+    && pip install --no-cache-dir opencv-python-headless
 COPY . .
 
 CMD ["python", "main.py", "--interactive"]

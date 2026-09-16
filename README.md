@@ -181,7 +181,6 @@ OLLAMA_MODEL=qwen2.5:7b
 OLLAMA_BASE_URL=http://localhost:11434
 
 # Vision / simulation / robot (see .env.example for the full list)
-USE_LIVE_SIMULATION=true       # false falls back to a static JSON scene in drafts/
 SIMULATION_MODE=DIRECT         # DIRECT (headless) | GUI (visual debug window)
 VISION_DETECTOR=yolo           # empty (ground truth only) | colour | yolo
 ROBOT_MODEL=mock               # mock | franka | kuka  (ur5 not yet implemented)
@@ -208,12 +207,6 @@ Type any instruction at the prompt. Type `status` to see the tracker summary. Ty
 ```bash
 python main.py --quiet "locate the yellow block"
 ```
-
-### Force live simulation
-```bash
-python main.py --live "pick up the red block"
-```
-Overrides `USE_LIVE_SIMULATION` for this run regardless of what's in `.env`.
 
 ### Switch model without changing code
 Set `LLM_BACKEND` in your `.env`:
@@ -324,7 +317,7 @@ python comparison_report.py
 Sends the instruction to GPT-4o / Gemini / DeepSeek / a local Ollama model (selected via `LLM_BACKEND`) with a structured system prompt and 6 few-shot examples. Returns `ParsedInstruction` with action, object, destination, spatial relation, and confidence. Handles empty, vague, and synonym edge cases before calling the model.
 
 ### Stage 2 — Vision Lookup (`simulation_backend/vision/scene_representation.py`)
-`get_current_scene()` captures the live PyBullet workspace through `simulation_backend/simulation.py`. Detection priority per object: primary detector (YOLO or colour threshold, if `VISION_DETECTOR` is set) first, then ground truth (exact PyBullet positions) as fallback for anything the detector missed. Fails fast with a `RuntimeError` if any object registered in the workspace is missing from the detected scene. If `USE_LIVE_SIMULATION=false`, falls back to a static JSON scene in `drafts/` instead.
+`get_current_scene()` captures the live PyBullet workspace through `simulation_backend/simulation.py`. Detection priority per object: primary detector (YOLO or colour threshold, if `VISION_DETECTOR` is set) first, then ground truth (exact PyBullet positions) as fallback for anything the detector missed. Fails fast with a `RuntimeError` if any object registered in the workspace is missing from the detected scene.
 
 ### Stage 3 — Task Planning (`task_planner/planner.py`)
 Rule-based planner combining `ParsedInstruction` and the scene map into an ordered `ActionPlan`. Generates `locate → move → pick → move → place` sequences. Spatial offset handling — "left of", "right of", "near", "next to", "on top of", "in front of", "behind" — computes offset positions relative to reference objects.

@@ -29,22 +29,30 @@ from simulation_backend.action_schema import ActionPlan, RobotCommand, CommandTy
 logger = logging.getLogger(__name__)
 
 # ── Spatial offset map ─────────────────────────────────────────────────────────
-# Maps spatial relation strings to (dx, dy) offsets in workspace units.
-# Applied relative to the reference object's position.
+# Maps spatial relation strings to (dx, dy) offsets in METRES, matching the units
+# used throughout scene_config.yaml. Applied relative to the reference object's
+# position.
+#
+# Axis convention is the workspace's own: +X points away from the robot base,
+# +Y is the robot's left. That is why 'left tray' sits at y=+0.45 and
+# 'right tray' at y=-0.45 — so left/right offsets move along Y, and
+# front/behind along X.
+_CLEARANCE_M = 0.15   # gap from the reference object's centre; blocks are 0.05 m
+
 SPATIAL_OFFSETS: dict[str, tuple[float, float]] = {
-    "left of":    (-1.5,  0.0),
-    "left":       (-1.5,  0.0),
-    "right of":   ( 1.5,  0.0),
-    "right":      ( 1.5,  0.0),
-    "near":       ( 0.8,  0.8),
-    "next to":    ( 1.2,  0.0),
+    "left of":    ( 0.0,  _CLEARANCE_M),
+    "left":       ( 0.0,  _CLEARANCE_M),
+    "right of":   ( 0.0, -_CLEARANCE_M),
+    "right":      ( 0.0, -_CLEARANCE_M),
+    "near":       (-0.10,  0.10),
+    "next to":    ( 0.0,  _CLEARANCE_M),
     "on top of":  ( 0.0,  0.0),   # same x,y; height handled by real sim
-    "in front of":( 0.0, -1.5),
-    "behind":     ( 0.0,  1.5),
+    "in front of":(-_CLEARANCE_M, 0.0),   # between the robot base and the object
+    "behind":     ( _CLEARANCE_M, 0.0),
     "in":         ( 0.0,  0.0),   # inside container → use container position
     # S5-3: "move X to the left tray" parses as spatial_relation="to". Without
     # these, "to"/"into"/"onto" fell through to DEFAULT_OFFSET and the drop-off
-    # landed 1.0 units off the container centre.
+    # landed off the container centre.
     "to":         ( 0.0,  0.0),
     "into":       ( 0.0,  0.0),
     "onto":       ( 0.0,  0.0),
@@ -52,7 +60,7 @@ SPATIAL_OFFSETS: dict[str, tuple[float, float]] = {
     "at":         ( 0.0,  0.0),
 }
 
-DEFAULT_OFFSET = (1.0, 0.0)  # fallback when relation not in map
+DEFAULT_OFFSET = (0.0, _CLEARANCE_M)  # fallback when relation not in map
 
 
 # ── Scene helpers ──────────────────────────────────────────────────────────────

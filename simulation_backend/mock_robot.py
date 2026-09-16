@@ -112,8 +112,14 @@ class MockRobot:
 
     # ── Robot commands ────────────────────────────────────────────────────────
 
-    def move_to(self, x: float, y: float) -> CommandResult:
-        """Move robot arm to absolute position (x, y)."""
+    def move_to(self, x: float, y: float, z: float = 0.0) -> CommandResult:
+        """
+        Move robot arm to absolute position (x, y).
+
+        z is accepted to keep the signature identical to RobotBase and the
+        PyBullet robots, but MockRobot tracks the arm in 2D only, so it is
+        ignored rather than stored.
+        """
         start = time.perf_counter()
 
         # Boundary check

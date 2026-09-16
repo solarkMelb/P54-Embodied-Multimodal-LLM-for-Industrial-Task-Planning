@@ -1,6 +1,7 @@
 # Multimodal LLM for Industrial Task Planning
 
 **COS40005 Computing Technology Project B — Capstone**
+
 Swinburne University of Technology × ARENA2036 × University of Stuttgart
 
 ---

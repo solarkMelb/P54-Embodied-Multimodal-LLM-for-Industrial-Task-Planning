@@ -26,7 +26,6 @@ import pytest
 
 from llm_backend.multi_action import (
     split_instruction,
-    is_multi_action,
     names_new_target,
     leading_verb,
 )
@@ -129,11 +128,6 @@ class TestInstructionSplitting:
     def test_at_least_five_multi_action_instructions_covered(self):
         """AC4: at least 5 multi-action instructions tested."""
         assert len(MULTI_ACTION_CASES) >= 5
-
-    def test_is_multi_action_predicate(self):
-        assert is_multi_action("move the red block to the left tray then "
-                               "move the blue block to the right tray") is True
-        assert is_multi_action("pick up the red block") is False
 
     def test_empty_instruction_returns_no_segments(self):
         assert split_instruction("") == []

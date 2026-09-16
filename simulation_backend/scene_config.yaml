@@ -78,46 +78,6 @@ camera:
   height:         480
 
 # ══════════════════════════════════════════════════════════════════════════════
-# DISPLAY (display_scene.py only)
-# ══════════════════════════════════════════════════════════════════════════════
-display:
-  # PyBullet GUI window
-  gui:
-    enabled:      true
-    background_color: [0.15, 0.15, 0.15]   # dark grey background
-
-  # Object labels floating above objects in the PyBullet GUI
-  # Disable if labels are hard to read or cluttering the view
-  object_labels:
-    enabled:      true
-    color:        [1.0, 1.0, 1.0]    # white text
-    size:         1.2                 # text size multiplier
-    offset_z:     0.15               # height above object in metres
-    # Set enabled: false to remove all labels without deleting this config
-
-  # Robot state debug text in PyBullet GUI
-  robot_state_overlay:
-    enabled:      true
-    position:     [0.0, 0.0, 1.5]   # world position where text appears
-    color:        [0.0, 1.0, 0.5]   # green text
-    size:         1.0
-
-  # OpenCV camera feed window
-  opencv_window:
-    enabled:      true
-    window_name:  "Simulation Camera Feed"
-    show_detections:  true           # draw bounding boxes if detector is active
-    show_segmentation: true          # overlay segmentation mask if enabled
-    update_rate_hz:   30             # how often to refresh the OpenCV window
-
-  # Terminal output during display_scene.py run
-  terminal:
-    enabled:      true
-    print_scene:  true               # print full scene dict each update
-    print_robot_state: true          # print robot position, held object
-    update_rate_hz: 2                # terminal prints per second (keep low)
-
-# ══════════════════════════════════════════════════════════════════════════════
 # OBJECTS
 # ══════════════════════════════════════════════════════════════════════════════
 # All objects loaded into the simulation workspace.

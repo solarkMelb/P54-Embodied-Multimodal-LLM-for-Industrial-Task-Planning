@@ -221,8 +221,3 @@ def split_instruction(instruction: str) -> list[str]:
 
     logger.debug("[multi-action] %r -> %r", instruction, segments)
     return segments
-
-
-def is_multi_action(instruction: str) -> bool:
-    """Convenience predicate — True if the instruction contains 2+ actions."""
-    return len(split_instruction(instruction)) > 1

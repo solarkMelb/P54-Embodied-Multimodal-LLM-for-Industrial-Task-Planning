@@ -8,7 +8,7 @@ SAM, open-vocabulary, depth-based — not yet implemented) — must inherit
 from DetectorBase and implement the single abstract method: detect().
 
 Design goals:
-    1. One interface.  SceneBuilder and display_scene.py call detect() without
+    1. One interface.  SceneBuilder calls detect() without
        knowing which backend is active. Swap detectors by changing VISION_DETECTOR
        in .env — zero code changes in the rest of the pipeline.
 

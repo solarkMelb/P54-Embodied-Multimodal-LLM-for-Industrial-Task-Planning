@@ -85,7 +85,6 @@ P54-Embodied-Multimodal-LLM-for-Industrial-Task-Planning/
 │   ├── mock_robot.py                    ← MockRobot simulator (no PyBullet required)
 │   ├── executor.py                      ← Runs ActionPlan step by step
 │   ├── simulation.py                    ← Owns the PyBullet session; picks robot via ROBOT_MODEL
-│   ├── display_scene.py                 ← Standalone live detection-window viewer
 │   ├── scene_config.yaml                ← Workspace/object/robot layout config
 │   ├── URDF_DOCUMENTATION.md            ← URDF asset authorship & licensing notes
 │   ├── assets/block_urdf/               ← Custom table/tray/block/workstation URDFs

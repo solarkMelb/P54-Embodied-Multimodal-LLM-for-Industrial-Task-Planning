@@ -72,14 +72,14 @@ FEW_SHOT_EXAMPLES = [
         }
     },
     {
-        "instruction": "grab the red block and drop it near the blue tray",
+        "instruction": "grab the red block and drop it near the workstation",
         "output": {
             "action": "pick",
             "object_target": "red block",
-            "destination": "blue tray",
+            "destination": "workstation",
             "spatial_relation": "near",
             "confidence": "high",
-            "raw_instruction": "grab the red block and drop it near the blue tray",
+            "raw_instruction": "grab the red block and drop it near the workstation",
             "notes": "Mapped 'grab' to 'pick' and 'drop' to 'place' as closest valid actions."
         }
     },

@@ -30,8 +30,6 @@ import sys
 import argparse
 import logging
 import time
-import logging
-logger = logging.getLogger(__name__)
 
 os.environ["PYDANTIC_DISABLE_PLUGINS"] = "1"
 
@@ -51,9 +49,13 @@ from simulation_backend.vision.scene_representation import get_current_scene
 from simulation_backend.mock_robot import MockRobot
 from simulation_backend.executor   import Executor
 from simulation_backend.action_schema import plan_to_commands
+# force=True: importing custom_LLM_parser above already called basicConfig at
+# INFO, and the first call wins. Without force this is a silent no-op and every
+# run prints the library's INFO logs instead of the WARNING level asked for here.
 logging.basicConfig(
     level=logging.WARNING,
-    format="%(asctime)s [%(levelname)s] %(name)s — %(message)s"
+    format="%(asctime)s [%(levelname)s] %(name)s — %(message)s",
+    force=True,
 )
 logger = logging.getLogger(__name__)
 
@@ -468,218 +470,6 @@ def _show_detection_window(sim) -> None:
         logger.warning(f"[detection window] Could not display: {e}")
 
 
-# ── GUI presentation (S5-3 demo) ───────────────────────────────────────────────
-
-def _style_gui(sim) -> None:
-    """
-    Turn the PyBullet debug window into something presentable.
-
-    PyBullet's GUI mode opens its ExampleBrowser: side panels, a Params pane and
-    three synthetic-camera preview boxes (RGB, depth, segmentation). They are
-    useful while debugging the vision module and only clutter a demo of the
-    task pipeline, so they are switched off here and the camera is framed on
-    the workspace instead of the default far-away view.
-
-    GUI mode only. Every call is guarded — a visualiser that refuses a setting
-    must never take the pipeline down with it.
-    """
-    import pybullet as p
-
-    def _try(fn):
-        """Apply one visual setting; ignore it if this build refuses it."""
-        try:
-            fn()
-        except Exception as e:
-            logger.debug(f"[gui] setting skipped: {e}")
-
-    try:
-        c = sim.client
-
-        # Panels and synthetic-camera previews off.
-        for flag in (p.COV_ENABLE_GUI,
-                     p.COV_ENABLE_RGB_BUFFER_PREVIEW,
-                     p.COV_ENABLE_DEPTH_BUFFER_PREVIEW,
-                     p.COV_ENABLE_SEGMENTATION_MARK_PREVIEW):
-            _try(lambda f=flag: p.configureDebugVisualizer(f, 0, physicsClientId=c))
-
-        # Depth cues: shadows are what stop the scene reading as a flat diagram.
-        _try(lambda: p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 1, physicsClientId=c))
-        _try(lambda: p.configureDebugVisualizer(
-            lightPosition=[2.6, -2.2, 3.4], physicsClientId=c))
-        _try(lambda: p.configureDebugVisualizer(
-            shadowMapResolution=4096, shadowMapWorldSize=4,
-            shadowMapIntensity=0.75, physicsClientId=c))
-
-        # ── Palette ───────────────────────────────────────────────────────
-        # A dark studio set. The workspace objects are the data the viewer has
-        # to read, so everything that is not an object — backdrop, floor, table,
-        # walls — is pushed down in value until the coloured blocks are the
-        # brightest thing in the frame.
-        # Value ladder, darkest to lightest. Each element has to separate from
-        # the one behind it, or the silhouette disappears — the table read as
-        # invisible when it sat too close in value to the floor under it.
-        #   backdrop  <  floor  <  table  <  trays  <  blocks
-        BACKDROP   = [0.095, 0.105, 0.135]          # darkest: recedes completely
-        FLOOR      = [0.185, 0.200, 0.235]          # dark, but reads as a surface
-        TABLE_TOP  = [0.520, 0.395, 0.270, 1.0]     # warm wood, clearly above the floor
-        TRAY_BODY  = [0.740, 0.760, 0.800, 1.0]     # cool light grey: separates by hue too
-        WALL_GLASS = [0.55, 0.68, 0.85, 0.07]       # a hint of an edge, nothing more
-        WORKSTN    = [0.30, 0.32, 0.37, 0.35]       # translucent: stops hiding the red block
-
-        _try(lambda: p.configureDebugVisualizer(
-            rgbBackground=BACKDROP, physicsClientId=c))
-
-        # Shadows carry the depth, but on a dark set a heavy shadow turns to
-        # mud — keep them soft.
-        _try(lambda: p.configureDebugVisualizer(
-            shadowMapResolution=4096, shadowMapWorldSize=4,
-            shadowMapIntensity=0.45, physicsClientId=c))
-
-        def _close(a, b, tol=0.06):
-            return all(abs(x - y) <= tol for x, y in zip(a[:3], b[:3]))
-
-        WOOD_CFG = (0.76, 0.60, 0.42)               # table colour in scene_config.yaml
-
-        for body in range(p.getNumBodies(physicsClientId=c)):
-            try:
-                uid  = p.getBodyUniqueId(body, physicsClientId=c)
-                name = p.getBodyInfo(uid, physicsClientId=c)[1].decode(errors="replace").lower()
-                shapes = p.getVisualShapeData(uid, physicsClientId=c)
-            except Exception:
-                continue
-
-            # plane.urdf ships a checkerboard texture that tiles into the
-            # distance and reads as a flat diagram. Strip it, keep the floor.
-            if "plane" in name or "floor" in name:
-                _try(lambda i=uid: p.changeVisualShape(
-                    i, -1, textureUniqueId=-1, rgbaColor=FLOOR + [1.0],
-                    physicsClientId=c))
-                continue
-
-            for shape in shapes:
-                rgba = shape[7]
-                link = shape[1]
-                if 0.3 <= rgba[3] < 0.95:            # the perimeter walls
-                    _try(lambda i=uid, l=link: p.changeVisualShape(
-                        i, l, rgbaColor=WALL_GLASS, physicsClientId=c))
-                elif _close(rgba, WOOD_CFG):         # the table
-                    _try(lambda i=uid, l=link: p.changeVisualShape(
-                        i, l, rgbaColor=TABLE_TOP, physicsClientId=c))
-
-        try:
-            for entry in sim.registry.all_entries():
-                low = entry.label.lower()
-                # The workstation sits dead centre and hides the red block.
-                if "workstation" in low:
-                    _try(lambda i=entry.body_id: p.changeVisualShape(
-                        i, -1, rgbaColor=WORKSTN, physicsClientId=c))
-                # Trays are the drop-off targets, so they have to read against
-                # the warm table — cool and light does both jobs at once.
-                elif "tray" in low:
-                    _try(lambda i=entry.body_id: p.changeVisualShape(
-                        i, -1, rgbaColor=TRAY_BODY, physicsClientId=c))
-        except Exception:
-            pass
-
-        p.resetDebugVisualizerCamera(
-            cameraDistance=float(os.getenv("GUI_CAM_DISTANCE", "0.95")),
-            cameraYaw=float(os.getenv("GUI_CAM_YAW", "84")),
-            cameraPitch=float(os.getenv("GUI_CAM_PITCH", "-27")),
-            cameraTargetPosition=[0.45, 0.0, 0.10],
-            physicsClientId=c,
-        )
-    except Exception as e:
-        logger.debug(f"[gui] Could not style the visualiser: {e}")
-
-
-def _label_objects(sim, previous: list | None = None, focus: set | None = None) -> list:
-    """
-    Name the objects the viewer actually needs to read.
-
-    Labelling all seven objects at once produces noise, not information: the
-    labels collide, and nothing tells the eye which objects the instruction is
-    about. Only the objects named in the instruction are labelled, and each
-    label is tinted to its object so the association is immediate.
-
-    Args:
-        sim:      Simulation instance.
-        previous: Label ids from an earlier call, replaced in place.
-        focus:    Object labels to show. None shows every block and tray.
-
-    Returns:
-        The list of debug-text ids, to pass back on the next refresh.
-    """
-    import pybullet as p
-
-    # Bright tints: on a dark set, a label has to out-value the surface it
-    # floats over, and each one carries its object's hue so the eye pairs them
-    # before it reads the word.
-    TINT = {
-        "red block":    [1.00, 0.46, 0.42],
-        "blue block":   [0.48, 0.70, 1.00],
-        "green block":  [0.42, 0.93, 0.53],
-        "yellow block": [1.00, 0.84, 0.36],
-    }
-    TRAY = [0.74, 0.78, 0.84]
-
-    ids: list = []
-    previous = previous or []
-    try:
-        for entry in sim.registry.all_entries():
-            label = entry.label
-            low   = label.lower()
-            if "workstation" in low:          # never named in an instruction
-                continue
-            if focus and low not in focus:
-                continue
-
-            pos, _ = p.getBasePositionAndOrientation(entry.body_id, physicsClientId=sim.client)
-            if "tray" in low:
-                dx, dy, dz, colour, size = 0.0, -0.17, 0.02, TRAY, 0.95
-            else:
-                dx, dy, dz, colour, size = 0.0, 0.0, 0.15, TINT.get(low, [0.90, 0.92, 0.95]), 1.05
-
-            kwargs = dict(textColorRGB=colour, textSize=size, physicsClientId=sim.client)
-            if len(ids) < len(previous):
-                kwargs["replaceItemUniqueId"] = previous[len(ids)]
-            ids.append(p.addUserDebugText(
-                label, [pos[0] + dx, pos[1] + dy, pos[2] + dz], **kwargs))
-
-        # Clear any labels left over from a longer previous set.
-        for stale in previous[len(ids):]:
-            try:
-                p.removeUserDebugItem(stale, physicsClientId=sim.client)
-            except Exception:
-                pass
-    except Exception as e:
-        logger.debug(f"[gui] Could not draw object labels: {e}")
-    return ids
-
-
-def _banner(sim, lines: list[tuple[str, float, list]], previous: list | None = None) -> list:
-    """
-    Draw the caption block above the workspace.
-
-    Each entry is (text, size, colour) so the three lines carry a hierarchy —
-    title, instruction, outcome — instead of reading as one flat block.
-    """
-    import pybullet as p
-
-    ids: list = []
-    previous = previous or []
-    try:
-        z = 0.52
-        for i, (text, size, colour) in enumerate(lines):
-            kwargs = dict(textColorRGB=colour, textSize=size, physicsClientId=sim.client)
-            if i < len(previous):
-                kwargs["replaceItemUniqueId"] = previous[i]
-            ids.append(p.addUserDebugText(text, [0.02, 0.30, z], **kwargs))
-            z -= 0.055 + 0.022 * size
-    except Exception as e:
-        logger.debug(f"[gui] Could not draw banner: {e}")
-    return ids
-
-
 def _hold_simulation_open(sim) -> None:
     """
     Keep the PyBullet GUI window open after the pipeline completes.
@@ -727,21 +517,7 @@ def _hold_simulation_open(sim) -> None:
     except KeyboardInterrupt:
         pass
     finally:
-        # Print the camera the user ended on, so a view found by dragging with
-        # the mouse can be pinned in .env and reproduced on the next run.
-        try:
-            cam  = p.getDebugVisualizerCamera(physicsClientId=sim.client)
-            yaw, pitch, dist = cam[8], cam[9], cam[10]
-            print(f"\n  Camera position for this view — paste into .env to keep it:")
-            print(f"    GUI_CAM_DISTANCE={dist:.2f}")
-            print(f"    GUI_CAM_YAW={yaw:.0f}")
-            print(f"    GUI_CAM_PITCH={pitch:.0f}\n")
-        except Exception:
-            pass
         print("  Closing simulation.")
-
-
-
 
 
 def run_interactive(sim=None) -> None:
@@ -811,13 +587,6 @@ if __name__ == "__main__":
             from simulation_backend.simulation import Simulation
             sim = Simulation()
             print(f"  Simulation started — {len(sim.registry)} objects loaded.")
-            if os.getenv("SIMULATION_MODE", "DIRECT").upper() == "GUI":
-                _style_gui(sim)
-                sim._demo_labels = _label_objects(sim)
-                sim._demo_banner = _banner(sim, [
-                    ("P54   Multi-action command support", 1.45, [0.95, 0.96, 0.98]),
-                    ("Natural language  ->  vision  ->  planner  ->  KUKA", 0.95, [0.60, 0.65, 0.73]),
-                ])
         except Exception as e:
             print(f"  ✗ Failed to start simulation: {e}")
             print("  Real vision will be retried during Stage 2; no static scene will be used.")
@@ -827,41 +596,11 @@ if __name__ == "__main__":
         if args.interactive:
             run_interactive(sim=sim)
         elif args.instruction:
-            gui = sim is not None and os.getenv("SIMULATION_MODE", "DIRECT").upper() == "GUI"
-            if gui:
-                shown = args.instruction if len(args.instruction) <= 58 \
-                    else args.instruction[:55].rstrip() + "..."
-                sim._demo_banner = _banner(sim, [
-                    ("P54   Multi-action command support", 1.45, [0.95, 0.96, 0.98]),
-                    (f'"{shown}"', 1.0, [0.66, 0.71, 0.78]),
-                    ("running...", 1.05, [0.60, 0.65, 0.73]),
-                ], getattr(sim, "_demo_banner", None))
+            run_pipeline(args.instruction, verbose=not args.quiet, sim=sim)
 
-            res = run_pipeline(args.instruction, verbose=not args.quiet, sim=sim)
-
-            # After a single-instruction run, keep PyBullet open in GUI mode so
-            # the result can be inspected and screenshotted. Refresh the labels
-            # first so every block is named where it actually ended up.
-            if gui:
-                plan = res.get("plan")
-                parsed_set = res.get("parsed_set")
-                actions = getattr(parsed_set, "action_count", 1)
-                steps = getattr(plan, "total_steps", 0)
-                status = "COMPLETE" if res.get("success") else "FAILED"
-                # Label only what the instruction actually touched, so the
-                # final frame points at the result instead of naming everything.
-                focus = set()
-                for cmd in getattr(plan, "commands", []) or []:
-                    if cmd.target_object:
-                        focus.add(cmd.target_object.lower())
-                sim._demo_labels = _label_objects(
-                    sim, getattr(sim, "_demo_labels", None), focus=focus or None)
-                sim._demo_banner = _banner(sim, [
-                    ("P54   Multi-action command support", 1.45, [0.95, 0.96, 0.98]),
-                    (f'"{shown}"', 1.0, [0.66, 0.71, 0.78]),
-                    (f"{actions} actions   {steps} steps   {status}", 1.25,
-                     [0.36, 0.94, 0.56] if res.get("success") else [1.00, 0.45, 0.40]),
-                ], getattr(sim, "_demo_banner", None))
+            # Keep PyBullet open in GUI mode so the result can be inspected
+            # and screenshotted.
+            if sim is not None and os.getenv("SIMULATION_MODE", "DIRECT").upper() == "GUI":
                 _hold_simulation_open(sim)
         else:
             ap.print_help()

@@ -340,36 +340,6 @@ class RobotBase(ABC):
         """
         ...
 
-    def emergency_stop(self) -> None:
-        """
-        Immediately halt all joint motion.
-
-        Default implementation zeros all joint velocities via VELOCITY_CONTROL.
-        Override if the robot hardware has a dedicated e-stop mechanism.
-
-        This method is intentionally non-abstract so subclasses get safe
-        default behaviour without being forced to implement it.
-        """
-        try:
-            import pybullet as p
-            num_joints = p.getNumJoints(self._body_id, physicsClientId=self._client)
-            for joint_idx in range(num_joints):
-                info = p.getJointInfo(self._body_id, joint_idx,
-                                      physicsClientId=self._client)
-                joint_type = info[2]
-                if joint_type in (p.JOINT_REVOLUTE, p.JOINT_PRISMATIC):
-                    p.setJointMotorControl2(
-                        self._body_id,
-                        joint_idx,
-                        p.VELOCITY_CONTROL,
-                        targetVelocity=0.0,
-                        force=0.0,
-                        physicsClientId=self._client,
-                    )
-            logger.warning(f"[{self.model_name}] Emergency stop executed.")
-        except Exception as e:
-            logger.error(f"[{self.model_name}] Emergency stop failed: {e}")
-
     # ── State inspection (same interface as MockRobot) ─────────────────────────
 
     def get_position(self) -> tuple[float, float, float]:
